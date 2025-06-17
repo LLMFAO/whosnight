@@ -8,9 +8,10 @@ import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
 import UserRoleSelector from "@/components/user-role-selector";
 import NotificationBadge from "@/components/notification-badge";
+import UserRequestHistoryModal from "@/components/user-request-history-modal";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Bell, User } from "lucide-react";
+import { Bell, User, History } from "lucide-react";
 
 type ViewType = "calendar" | "todo" | "expenses";
 
@@ -18,6 +19,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
+  const [showRequestHistory, setShowRequestHistory] = useState(false);
   const [currentUser, setCurrentUser] = useState<"mom" | "dad" | "teen">(() => {
     // Initialize based on URL parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -78,13 +80,25 @@ export default function Home() {
           onRoleChange={handleUserSwitch}
         />
         
-        {showNotificationBadge && (
-          <NotificationBadge
-            pendingCount={pendingCount}
-            pendingItems={pendingItems}
-            onAcceptAll={handleAcceptAll}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowRequestHistory(true)}
+            className="gap-1"
+          >
+            <History className="h-4 w-4" />
+            History
+          </Button>
+          
+          {showNotificationBadge && (
+            <NotificationBadge
+              pendingCount={pendingCount}
+              pendingItems={pendingItems}
+              onAcceptAll={handleAcceptAll}
+            />
+          )}
+        </div>
       </div>
 
 
@@ -114,6 +128,11 @@ export default function Home() {
         open={showDetailedNotifications}
         onOpenChange={setShowDetailedNotifications}
         pendingItems={pendingItems || { assignments: [], events: [], tasks: [], expenses: [] }}
+      />
+
+      <UserRequestHistoryModal
+        open={showRequestHistory}
+        onOpenChange={setShowRequestHistory}
       />
     </div>
   );

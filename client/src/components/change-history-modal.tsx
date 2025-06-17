@@ -79,11 +79,14 @@ export default function ChangeHistoryModal({
   });
 
   const undoMutation = useMutation({
-    mutationFn: (logId: number) =>
-      apiRequest(`/api/undo/${logId}`, {
+    mutationFn: async (logId: number) => {
+      const response = await fetch(`/api/undo/${logId}`, {
         method: 'POST',
         headers: { 'x-user': currentUser }
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to undo change');
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Change undone successfully",
@@ -115,7 +118,7 @@ export default function ChangeHistoryModal({
     return log.requestedBy === currentUserId && 
            log.previousState && 
            log.action !== 'undone' &&
-           !logs.some(l => l.action === 'undone' && l.details.includes(log.action));
+           !logs.some((l: ActionLog) => l.action === 'undone' && l.details.includes(log.action));
   };
 
   return (
