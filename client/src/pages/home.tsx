@@ -70,30 +70,7 @@ export default function Home() {
         onRoleChange={handleUserSwitch}
       />
 
-      {/* Header with Notifications */}
-      <div className="bg-gray-100 border-b border-gray-200 p-2">
-        <div className="flex items-center justify-center space-x-2">
-          <span className="text-xs text-gray-600">Demo Mode:</span>
-          <Button
-            size="sm"
-            variant={currentUser === "mom" ? "default" : "outline"}
-            onClick={() => handleUserSwitch("mom")}
-            className="h-7 px-3 text-xs"
-            style={currentUser === "mom" ? { backgroundColor: "var(--mom-primary)" } : {}}
-          >
-            View as Mom
-          </Button>
-          <Button
-            size="sm"
-            variant={currentUser === "dad" ? "default" : "outline"}
-            onClick={() => handleUserSwitch("dad")}
-            className="h-7 px-3 text-xs"
-            style={currentUser === "dad" ? { backgroundColor: "var(--dad-primary)" } : {}}
-          >
-            View as Dad
-          </Button>
-        </div>
-      </div>
+
 
       {/* Updates Banner */}
       {showUpdatesBanner && (
