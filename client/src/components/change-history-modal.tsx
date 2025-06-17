@@ -136,6 +136,52 @@ export default function ChangeHistoryModal({
            !logs.some((l: ActionLog) => l.action === 'undone' && l.details.includes(log.action));
   };
 
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'create_calendar_assignment':
+      case 'update_calendar_assignment':
+        return 'bg-blue-100 text-blue-800';
+      case 'accept_calendar_assignment':
+        return 'bg-green-100 text-green-800';
+      case 'decline_calendar_assignment':
+        return 'bg-red-100 text-red-800';
+      case 'undone':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getCurrentStatus = () => {
+    if (currentAssignment) {
+      const { status, createdBy } = currentAssignment;
+      const creatorName = getUserName(createdBy);
+      
+      if (status === "pending") {
+        const needsApproval = createdBy !== currentUserId;
+        if (needsApproval) {
+          return {
+            text: `Pending approval from ${creatorName === "Mom" ? "Dad" : "Mom"}`,
+            color: "bg-orange-100 text-orange-800"
+          };
+        } else {
+          return {
+            text: "Waiting for approval",
+            color: "bg-yellow-100 text-yellow-800"
+          };
+        }
+      } else if (status === "confirmed") {
+        return {
+          text: "Confirmed",
+          color: "bg-green-100 text-green-800"
+        };
+      }
+    }
+    return null;
+  };
+
+  const currentStatus = getCurrentStatus();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -145,6 +191,14 @@ export default function ChangeHistoryModal({
             Change History
             {entityName && <span className="text-muted-foreground">- {entityName}</span>}
           </DialogTitle>
+          {currentStatus && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm text-muted-foreground">Current status:</span>
+              <Badge className={currentStatus.color}>
+                {currentStatus.text}
+              </Badge>
+            </div>
+          )}
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">

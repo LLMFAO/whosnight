@@ -179,6 +179,14 @@ export class DatabaseStorage implements IStorage {
     return assignment || undefined;
   }
 
+  async getCalendarAssignmentById(id: number): Promise<CalendarAssignment | undefined> {
+    const [assignment] = await db
+      .select()
+      .from(calendarAssignments)
+      .where(eq(calendarAssignments.id, id));
+    return assignment || undefined;
+  }
+
   async createCalendarAssignment(insertAssignment: InsertCalendarAssignment): Promise<CalendarAssignment> {
     const [assignment] = await db
       .insert(calendarAssignments)

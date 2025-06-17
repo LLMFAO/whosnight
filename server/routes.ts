@@ -49,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/calendar/assignment/:id", mockAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const assignment = await storage.getCalendarAssignment(parseInt(id));
+      const assignment = await storage.getCalendarAssignmentById(parseInt(id));
       if (!assignment) {
         res.status(404).json({ message: "Assignment not found" });
         return;
