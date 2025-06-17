@@ -155,13 +155,15 @@ export default function DetailedNotificationsModal({
                       </div>
                       <div className="text-sm text-muted-foreground space-y-1">
                         <div>
-                          Assigned to: <Badge variant={assignment.assignedTo === "mom" ? "default" : "secondary"}>
+                          Assigned to: <Badge className={assignment.assignedTo === "mom" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"}>
                             {assignment.assignedTo === "mom" ? "Mom" : "Dad"}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          Requested by: {assignment.createdBy === 1 ? "Mom" : assignment.createdBy === 2 ? "Dad" : "Teen"}
+                          Requested by: <span className={assignment.createdBy === 1 ? "text-red-600 font-medium" : assignment.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                            {assignment.createdBy === 1 ? "Mom" : assignment.createdBy === 2 ? "Dad" : "Teen"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -205,7 +207,9 @@ export default function DetailedNotificationsModal({
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          Requested by: {event.createdBy === 1 ? "Mom" : event.createdBy === 2 ? "Dad" : "Teen"}
+                          Requested by: <span className={event.createdBy === 1 ? "text-red-600 font-medium" : event.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                            {event.createdBy === 1 ? "Mom" : event.createdBy === 2 ? "Dad" : "Teen"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -248,7 +252,9 @@ export default function DetailedNotificationsModal({
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          Requested by: {task.createdBy === 1 ? "Mom" : task.createdBy === 2 ? "Dad" : "Teen"}
+                          Requested by: <span className={task.createdBy === 1 ? "text-red-600 font-medium" : task.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                            {task.createdBy === 1 ? "Mom" : task.createdBy === 2 ? "Dad" : "Teen"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -291,7 +297,9 @@ export default function DetailedNotificationsModal({
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          Requested by: {expense.createdBy === 1 ? "Mom" : expense.createdBy === 2 ? "Dad" : "Teen"}
+                          Requested by: <span className={expense.createdBy === 1 ? "text-red-600 font-medium" : expense.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                            {expense.createdBy === 1 ? "Mom" : expense.createdBy === 2 ? "Dad" : "Teen"}
+                          </span>
                         </div>
                       </div>
                     </div>
