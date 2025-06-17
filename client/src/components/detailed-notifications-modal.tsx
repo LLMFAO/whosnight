@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, DollarSign, CheckSquare, Check, X, User } from "lucide-react";
 import { formatDisplayDate } from "@/lib/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +28,31 @@ export default function DetailedNotificationsModal({
 }: DetailedNotificationsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch action logs to get cancellation reasons
+  const { data: actionLogs = [] } = useQuery({
+    queryKey: ["/api/action-logs"],
+    queryFn: async () => {
+      const response = await fetch("/api/action-logs");
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: open && pendingItems.events.some((event: any) => event.status === 'cancelled'),
+  });
+
+  // Helper function to extract cancellation reason from action logs
+  const getCancellationReason = (eventId: number) => {
+    const cancelLog = actionLogs.find((log: any) => 
+      log.action === 'cancel_event' && 
+      log.entityType === 'event' && 
+      log.entityId === eventId
+    );
+    if (cancelLog?.details) {
+      const match = cancelLog.details.match(/: (.+)$/);
+      return match ? match[1] : null;
+    }
+    return null;
+  };
 
   const acceptItemMutation = useMutation({
     mutationFn: async ({ itemType, itemId }: { itemType: string; itemId: number }) => {
@@ -220,6 +245,14 @@ export default function DetailedNotificationsModal({
                             {event.createdBy === 1 ? "Mom" : event.createdBy === 2 ? "Dad" : "Teen"}
                           </span>
                         </div>
+                        {event.status === 'cancelled' && (() => {
+                          const reason = getCancellationReason(event.id);
+                          return reason ? (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm">
+                              <strong>Reason:</strong> {reason}
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                     <Button
