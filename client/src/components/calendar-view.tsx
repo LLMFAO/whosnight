@@ -43,10 +43,12 @@ export default function CalendarView() {
             const response = await fetch(`/api/events/${dateStr}`);
             if (response.ok) {
               const events = await response.json();
-              allEvents.push(...events);
+              if (Array.isArray(events)) {
+                allEvents.push(...events);
+              }
             }
           } catch (error) {
-            console.error(`Failed to fetch events for ${dateStr}:`, error);
+            // Silently handle fetch errors to avoid console spam
           }
         }
       }

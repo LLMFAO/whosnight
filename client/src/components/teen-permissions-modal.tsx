@@ -39,7 +39,13 @@ export default function TeenPermissionsModal({
     enabled: open && teenUserId > 0,
   });
 
-  const [localPermissions, setLocalPermissions] = useState<Partial<TeenPermissions>>({});
+  const [localPermissions, setLocalPermissions] = useState<Partial<TeenPermissions>>({
+    canModifyAssignments: false,
+    canAddEvents: false,
+    canAddTasks: false,
+    canAddExpenses: false,
+    isReadOnly: true,
+  });
 
   // Update local state when permissions are loaded
   useEffect(() => {
@@ -76,7 +82,16 @@ export default function TeenPermissionsModal({
   });
 
   const handlePermissionChange = (permission: keyof TeenPermissions, value: boolean) => {
-    setLocalPermissions(prev => ({ ...prev, [permission]: value }));
+    setLocalPermissions(prev => {
+      const newPermissions = { ...prev, [permission]: value };
+      
+      // Auto-disable read-only mode when enabling any specific permission
+      if (value && permission !== 'isReadOnly' && prev.isReadOnly) {
+        newPermissions.isReadOnly = false;
+      }
+      
+      return newPermissions;
+    });
   };
 
   const handleReadOnlyToggle = (value: boolean) => {
@@ -134,6 +149,11 @@ export default function TeenPermissionsModal({
             </div>
             <p className="text-sm text-muted-foreground">
               When enabled, teen can only view information but cannot make any changes.
+              {!localPermissions.isReadOnly && permissions?.isReadOnly && (
+                <span className="block mt-1 text-blue-600 font-medium">
+                  ✓ Read-only mode automatically disabled when granting specific permissions
+                </span>
+              )}
             </p>
           </div>
 

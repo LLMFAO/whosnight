@@ -123,6 +123,9 @@ Changelog:
 - June 17, 2025. Implemented teen user role with configurable permissions system - parents can control teen access (read-only or specific modification permissions for calendar, events, tasks, and expenses)
 - June 17, 2025. Fixed approval system so changes from any user show up for appropriate parents to approve, with proper pending items logic
 - June 17, 2025. Fixed change history system by adding entity tracking (entityType and entityId) to action logs - history modals now show complete change details with current status display
+- June 17, 2025. Improved event visibility by changing event dots from blue to white with gray border - now visible on all colored date backgrounds
+- June 17, 2025. Enhanced change history with user-friendly labels ("Night assigned", "Approved") instead of technical terms and improved timestamp formatting
+- June 17, 2025. Implemented auto-disable read-only mode when individual teen permissions are granted - provides visual feedback to parents
 ```
 
 ## User Preferences
