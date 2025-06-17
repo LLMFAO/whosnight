@@ -222,6 +222,7 @@ export default function CalendarView() {
         events={Array.isArray(eventsForSelectedDate) ? eventsForSelectedDate : []}
         onAssignment={handleAssignment}
         isLoading={assignmentMutation.isPending}
+        currentAssignment={selectedDate ? assignmentMap.get(formatDate(selectedDate)) : undefined}
       />
     </div>
   );

@@ -19,6 +19,7 @@ interface DateAssignmentSheetProps {
   events: any[];
   onAssignment: (assignedTo: string | null) => void;
   isLoading: boolean;
+  currentAssignment?: any;
 }
 
 export default function DateAssignmentSheet({
@@ -28,6 +29,7 @@ export default function DateAssignmentSheet({
   events,
   onAssignment,
   isLoading,
+  currentAssignment,
 }: DateAssignmentSheetProps) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -241,7 +243,7 @@ export default function DateAssignmentSheet({
         open={showHistoryModal}
         onOpenChange={setShowHistoryModal}
         entityType="calendar_assignment"
-        entityId={1} // This will need to be dynamically set based on the selected date
+        entityId={currentAssignment?.id || 0}
         entityName={format(selectedDate, "MMMM d, yyyy")}
       />
     </>
