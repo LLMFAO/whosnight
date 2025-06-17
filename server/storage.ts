@@ -97,6 +97,7 @@ export class DatabaseStorage implements IStorage {
       // Check if default users exist
       const existingMom = await this.getUserByUsername("mom");
       const existingDad = await this.getUserByUsername("dad");
+      const existingTeen = await this.getUserByUsername("teen");
       
       if (!existingMom) {
         await this.createUser({
@@ -113,6 +114,26 @@ export class DatabaseStorage implements IStorage {
           password: "password123", 
           name: "Dad",
           role: "dad"
+        });
+      }
+      
+      if (!existingTeen) {
+        const teenUser = await this.createUser({
+          username: "teen",
+          password: "password123",
+          name: "Teen",
+          role: "teen"
+        });
+        
+        // Create default read-only permissions for the teen
+        await this.createTeenPermissions({
+          teenUserId: teenUser.id,
+          canModifyAssignments: false,
+          canAddEvents: false,
+          canAddTasks: false,
+          canAddExpenses: false,
+          isReadOnly: true,
+          modifiedBy: 1 // Mom's ID
         });
       }
     } catch (error) {
