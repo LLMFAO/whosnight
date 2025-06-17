@@ -61,8 +61,13 @@ export const expenses = pgTable("expenses", {
 export const actionLogs = pgTable("action_logs", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  action: text("action").notNull(),
-  details: text("details").notNull(),
+  action: text("action").notNull(), // "created", "updated", "deleted", "approved", "rejected", "undone"
+  entityType: text("entity_type"), // "assignment", "event", "task", "expense" - nullable for backward compatibility
+  entityId: integer("entity_id"), // nullable for backward compatibility
+  details: text("details").notNull(), // JSON string with change details
+  previousState: text("previous_state"), // JSON string with previous state for undo
+  requestedBy: integer("requested_by"), // Who originally requested this change
+  approvedBy: integer("approved_by"), // Who approved this change
   ipAddress: text("ip_address"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });

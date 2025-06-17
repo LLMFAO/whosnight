@@ -338,11 +338,32 @@ export class DatabaseStorage implements IStorage {
       return await db
         .select()
         .from(actionLogs)
-        .where(eq(actionLogs.userId, userId));
+        .where(eq(actionLogs.userId, userId))
+        .orderBy(actionLogs.timestamp);
     }
     return await db
       .select()
-      .from(actionLogs);
+      .from(actionLogs)
+      .orderBy(actionLogs.timestamp);
+  }
+
+  async getEntityLogs(entityType: string, entityId: number): Promise<ActionLog[]> {
+    return await db
+      .select()
+      .from(actionLogs)
+      .where(and(
+        eq(actionLogs.entityType, entityType),
+        eq(actionLogs.entityId, entityId)
+      ))
+      .orderBy(actionLogs.timestamp);
+  }
+
+  async getUserRequestHistory(userId: number): Promise<ActionLog[]> {
+    return await db
+      .select()
+      .from(actionLogs)
+      .where(eq(actionLogs.requestedBy, userId))
+      .orderBy(actionLogs.timestamp);
   }
 
   // Share Link methods
