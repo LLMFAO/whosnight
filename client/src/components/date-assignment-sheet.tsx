@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { User, X, Plus, MapPin, Clock, Edit } from "lucide-react";
+import { User, X, Plus, MapPin, Clock, Edit, History } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
+import ChangeHistoryModal from "./change-history-modal";
 
 interface DateAssignmentSheetProps {
   open: boolean;
@@ -29,6 +30,7 @@ export default function DateAssignmentSheet({
   isLoading,
 }: DateAssignmentSheetProps) {
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [eventForm, setEventForm] = useState({
     name: "",
     time: "",
@@ -68,10 +70,20 @@ export default function DateAssignmentSheet({
         <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
           <SheetHeader className="text-center pb-4">
             <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
-            <SheetTitle className="text-lg font-semibold">
-              {format(selectedDate, "MMMM d, yyyy")}
-            </SheetTitle>
-            <p className="text-sm text-gray-500">Assign custody or add event</p>
+            <div className="flex items-center justify-center gap-2">
+              <SheetTitle className="text-lg font-semibold">
+                {format(selectedDate, "MMMM d, yyyy")}
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowHistoryModal(true)}
+                className="p-1 h-6 w-6"
+              >
+                <History className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500">Assign night or add event</p>
           </SheetHeader>
 
           <div className="space-y-3 mb-6">
@@ -223,6 +235,15 @@ export default function DateAssignmentSheet({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Change History Modal */}
+      <ChangeHistoryModal
+        open={showHistoryModal}
+        onOpenChange={setShowHistoryModal}
+        entityType="calendar_assignment"
+        entityId={1} // This will need to be dynamically set based on the selected date
+        entityName={format(selectedDate, "MMMM d, yyyy")}
+      />
     </>
   );
 }

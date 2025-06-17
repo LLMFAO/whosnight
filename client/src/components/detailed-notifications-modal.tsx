@@ -143,7 +143,7 @@ export default function DetailedNotificationsModal({
                   Calendar Assignments ({pendingItems.assignments.length})
                 </CardTitle>
                 <CardDescription>
-                  Custody day assignments awaiting confirmation
+                  Night assignments awaiting confirmation
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
