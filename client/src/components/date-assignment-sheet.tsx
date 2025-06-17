@@ -33,6 +33,7 @@ export default function DateAssignmentSheet({
 }: DateAssignmentSheetProps) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
   const [eventForm, setEventForm] = useState({
     name: "",
     time: "",
@@ -44,15 +45,32 @@ export default function DateAssignmentSheet({
 
   const eventMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/events", data);
+      if (editingEvent) {
+        return await apiRequest("PUT", `/api/events/${editingEvent.id}`, data);
+      } else {
+        return await apiRequest("POST", "/api/events", data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
       setShowEventForm(false);
+      setEditingEvent(null);
       setEventForm({ name: "", time: "", location: "", description: "", children: [] });
     },
   });
+
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event);
+    setEventForm({
+      name: event.name || "",
+      time: event.time || "",
+      location: event.location || "",
+      description: event.description || "",
+      children: event.children || [],
+    });
+    setShowEventForm(true);
+  };
 
   const handleEventSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +178,11 @@ export default function DateAssignmentSheet({
                           )}
                         </div>
                       </div>
-                      <Button size="sm" variant="ghost">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleEditEvent(event)}
+                      >
                         <Edit className="w-3 h-3" />
                       </Button>
                     </div>
@@ -176,7 +198,7 @@ export default function DateAssignmentSheet({
       <Dialog open={showEventForm} onOpenChange={setShowEventForm}>
         <DialogContent className="max-w-sm mx-4">
           <DialogHeader>
-            <DialogTitle>Add Event</DialogTitle>
+            <DialogTitle>{editingEvent ? "Edit Event" : "Add Event"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEventSubmit} className="space-y-4">
             <div>
