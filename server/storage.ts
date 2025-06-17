@@ -64,6 +64,8 @@ export interface IStorage {
   // Action Logs
   createActionLog(log: InsertActionLog): Promise<ActionLog>;
   getActionLogs(userId?: number): Promise<ActionLog[]>;
+  getEntityLogs(entityType: string, entityId: number): Promise<ActionLog[]>;
+  getUserRequestHistory(userId: number): Promise<ActionLog[]>;
   
   // Share Links
   createShareLink(shareLink: InsertShareLink): Promise<ShareLink>;

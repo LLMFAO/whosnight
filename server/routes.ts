@@ -417,6 +417,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get change history for a specific entity
+  app.get("/api/history/:entityType/:entityId", async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const logs = await storage.getEntityLogs(entityType, parseInt(entityId));
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching entity history:', error);
+      res.status(500).json({ error: 'Failed to fetch history' });
+    }
+  });
+
+  // Get user's request history
+  app.get("/api/my-requests", async (req, res) => {
+    try {
+      const currentUser = req.headers['x-user'] as string || 'mom';
+      const userId = currentUser === 'mom' ? 1 : (currentUser === 'dad' ? 2 : 3);
+      
+      const requests = await storage.getUserRequestHistory(userId);
+      res.json(requests);
+    } catch (error) {
+      console.error('Error fetching user requests:', error);
+      res.status(500).json({ error: 'Failed to fetch requests' });
+    }
+  });
+
+  // Undo a specific change
+  app.post("/api/undo/:logId", async (req, res) => {
+    try {
+      const { logId } = req.params;
+      const currentUser = req.headers['x-user'] as string || 'mom';
+      const userId = currentUser === 'mom' ? 1 : (currentUser === 'dad' ? 2 : 3);
+      
+      // Get the original log entry
+      const logs = await storage.getActionLogs();
+      const originalLog = logs.find(log => log.id === parseInt(logId));
+      
+      if (!originalLog || !originalLog.previousState) {
+        return res.status(400).json({ error: 'Cannot undo this change' });
+      }
+
+      // Only allow undoing your own requests
+      if (originalLog.requestedBy !== userId) {
+        return res.status(403).json({ error: 'You can only undo your own requests' });
+      }
+
+      const previousState = JSON.parse(originalLog.previousState);
+      
+      // Restore the previous state based on entity type
+      switch (originalLog.entityType) {
+        case 'assignment':
+          await storage.updateCalendarAssignment(originalLog.entityId!, previousState);
+          break;
+        case 'event':
+          await storage.updateEvent(originalLog.entityId!, previousState);
+          break;
+        case 'task':
+          await storage.updateTask(originalLog.entityId!, previousState);
+          break;
+        case 'expense':
+          await storage.updateExpense(originalLog.entityId!, previousState);
+          break;
+      }
+
+      // Log the undo action
+      await storage.createActionLog({
+        userId,
+        action: 'undone',
+        entityType: originalLog.entityType || 'unknown',
+        entityId: originalLog.entityId || 0,
+        details: `Undid change: ${originalLog.action}`,
+        requestedBy: userId,
+        ipAddress: null
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error undoing change:', error);
+      res.status(500).json({ error: 'Failed to undo change' });
+    }
+  });
+
   // Teen permissions routes
   app.get("/api/teen-permissions/:teenUserId", mockAuth, async (req, res) => {
     try {
