@@ -119,6 +119,7 @@ RESTful endpoints for:
 ```
 Changelog:
 - June 17, 2025. Initial setup
+- June 17, 2025. Fixed calendar color system with immediate optimistic updates and proper pending/confirmed status workflow
 ```
 
 ## User Preferences

@@ -26,9 +26,7 @@ export default function CalendarView() {
   // Ensure assignments is always an array
   const assignmentsArray = Array.isArray(assignments) ? assignments : [];
   
-  // Debug logging
-  console.log('Month string:', monthString, 'Assignments data:', assignments, 'Array:', assignmentsArray);
-  console.log('Query URL would be:', `/api/calendar/assignments/${monthString}`);
+
 
   const { data: eventsForSelectedDate = [] } = useQuery({
     queryKey: ["/api/events", selectedDate ? formatDate(selectedDate) : ""],
@@ -195,7 +193,7 @@ export default function CalendarView() {
         open={showAssignmentSheet}
         onOpenChange={setShowAssignmentSheet}
         selectedDate={selectedDate}
-        events={eventsForSelectedDate}
+        events={Array.isArray(eventsForSelectedDate) ? eventsForSelectedDate : []}
         onAssignment={handleAssignment}
         isLoading={assignmentMutation.isPending}
       />

@@ -1,0 +1,264 @@
+Here's the project specification, now including the 'Accept All' functionality for Parent B.
+## Project Specification: Co-Parent Connect (Placeholder) - Mobile-Only Design (Enhanced Notifications + Accept All)
+
+**Project Name:** CoParent Connect (Placeholder)
+
+**Version:** 1.0 (Mobile-Only Design, Enhanced Notification Flow, Accept All)
+
+**Date:** June 16, 2025
+
+**1. Introduction**
+
+This document outlines the detailed specifications for a basic web application designed to help co-parents coordinate schedules, manage shared tasks, and track expenses. The primary goal is to provide a simple, intuitive, and transparent platform for co-parents to manage their shared responsibilities concerning their children, with an **exclusive focus on a high-quality mobile-only user experience** leveraging modern UI component design principles.
+
+**2. Goals & Objectives**
+
+* To provide a clear, shared calendar for managing custody schedules, optimized for mobile interaction.
+* To enable easy communication and agreement on schedule changes via streamlined mobile flows.
+* To facilitate the management of shared to-do lists through an intuitive mobile interface.
+* To offer a transparent system for tracking and managing shared expenses, designed for on-the-go entry and review.
+* To reduce friction and improve coordination between co-parents through a highly responsive and aesthetically clean mobile application.
+* **To deliver a visually appealing, highly performant, and delightful mobile-only user experience.**
+* **To provide a clear, in-app mechanism for parents to share updates with their co-parent, along with logging notification actions and an 'Accept All' option.**
+
+**3. Target Audience**
+
+Co-parents seeking a dedicated mobile application (accessed via web browser on smartphones) to organize and manage their shared responsibilities, prioritizing ease of use and clarity on small screens.
+
+**4. Core Features**
+
+The application will consist of three main sections: Calendar, To-Do List, and Expenses, always accessible via a prominent, fixed mobile navigation system.
+
+### 4.1. Global Mobile UI Principles
+
+* **Finger-Friendly Touch Targets:** All interactive elements will be generously sized (minimum 48x48px) with adequate spacing.
+* **Minimalist Aesthetic:** Clean lines, ample whitespace, clear typography, and a restrained use of color to ensure clarity and focus.
+* **Consistent Components:** Reusable UI components (buttons, input fields, cards, modals, date pickers) will be used throughout for a cohesive and predictable user experience.
+* **Fluid Transitions:** Smooth, subtle animations for screen transitions, modal opens/closes, and state changes to enhance perceived performance and user delight.
+* **Prioritized Information:** Key information will be immediately visible, with secondary details progressively disclosed upon interaction (e.g., tapping a card).
+* **Optimized Performance:** Fast loading times, highly responsive interactions, and efficient resource usage are paramount.
+
+### 4.2. Calendar Module
+
+**4.2.1. Calendar Display:**
+
+* **View:** Full-screen monthly calendar view.
+* **Default View:** Current month displayed upon login.
+* **Navigation:**
+    * **Month Navigation:** Prominent, clearly labeled "Previous Month" and "Next Month" arrow icons (e.g., `<` and `>`) at the top of the calendar.
+    * **Swipe Gestures:** Horizontal swipe gestures (left/right) on the calendar grid itself will allow fluid navigation between months.
+* **Date Cell Design:** Each day will be a distinct, tappable square or rectangle. Weekday headers (Mon, Tue, etc.) will be clearly displayed.
+* **Color Coding:**
+    * **Unassigned:** Clean white or very light gray background.
+    * **Mom's Day:** Solid **Red** background.
+    * **Dad's Day:** Solid **Blue** background.
+    * **Pending Review:** A **slightly less saturated version** of the assigned color (e.g., a pastel red or muted blue). This indicates a proposed change that is not yet mutually accepted by both parents. **No other indicators are needed.**
+
+**4.2.2. Schedule Management:**
+
+* **Custody Assignment Flow (Mobile Optimized):**
+    1.  **Single Tap:** A single tap on any date cell will trigger a **bottom sheet** or a compact, non-blocking **modal popup** from the bottom of the screen. This UI will contain:
+        * "Assign to Mom" button (Red, solid, clear text/icon).
+        * "Assign to Dad" button (Blue, solid, clear text/icon).
+        * "Clear Assignment" button (Neutral color, outline style).
+        * "Add Event" button (Neutral color, secondary style).
+        * A close icon (X) or swipe-down gesture to dismiss the sheet.
+    2.  **Multi-Select Mode:**
+        * From the bottom sheet, tapping "Assign to Mom" or "Assign to Dad" will:
+            * Dismiss the bottom sheet.
+            * Enter a distinct "multi-select mode" on the calendar. A temporary, top-aligned bar will appear, showing the currently selected parent (e.g., "Assigning to Mom") and a "Done" button or "X" icon to exit the mode.
+            * The calendar dates will remain visible. Tapping multiple dates in this mode will toggle them to the selected parent's color (red or blue, immediately appearing desaturated if a pending change).
+            * Subsequent taps on an already colored date in multi-select mode will cycle its state: `(currently selected parent's color) -> (other parent's color) -> (unassigned white)`. This allows for quick corrections within the mode.
+* **Pending Review System & Notification:**
+    * When **Parent A** makes a change (assigns a date, creates/edits/deletes an event, adds/completes a to-do, adds/edits an expense), the affected item (date on calendar, task, expense) immediately displays as **desaturated** for *both* Parent A and Parent B. This signifies the change is awaiting co-parent review/acceptance.
+    * **For Parent A (the initiator):**
+        * A prominent, persistent **"Share Updates" button or banner** will appear (e.g., in the bottom navigation bar or a sticky bar at the top/bottom of the screen) if there are any un-shared changes made by this user.
+        * Clicking this "Share Updates" button will open a **full-screen modal or bottom sheet** titled "Share Your Updates." This modal will:
+            * Briefly list or summarize the *pending changes* made by the current user.
+            * Present two primary options:
+                * **"Share via Link":** This button will:
+                    1.  Generate a unique, short-lived **shareable deep link** to the app. This link, when clicked by the co-parent, will direct them to the CoParent Connect app (or app's website if not installed) and potentially highlight the most recent changes.
+                    2.  Open the device's native **share sheet** (e.g., iOS Share Sheet, Android Share Intent), pre-populating it with the generated link and a default, customizable message (e.g., "CoParent Connect Update: [Parent's Name] made changes! Click here: [link]").
+                    3.  **Log the action:** "Shared via Link by [Parent's Name] on [Timestamp]."
+                    4.  Dismiss the "Share Updates" button/banner until new un-shared changes are made.
+                * **"I've Already Notified Co-Parent":** This button is for when the user has communicated the changes through an external channel (e.g., phone call, in-person).
+                    1.  **Log the action:** "Notified externally by [Parent's Name] on [Timestamp]."
+                    2.  Dismiss the "Share Updates" button/banner until new un-shared changes are made.
+            * A "Cancel" or "Close" option to dismiss the modal without taking action.
+    * **For Parent B (the receiver):**
+        * Parent B logs in and sees the desaturated date(s) on the calendar, or desaturated tasks/expenses. They might also receive the link from Parent A.
+        * Tapping a desaturated date (or task/expense) will open its detail view (bottom sheet or full screen), which will then prominently display:
+            * **"Accept Change" button:** If clicked, the item's color/status will become **fully saturated** (regular red/blue for calendar, or confirmed for tasks/expenses) for *both* Parent A and Parent B. The action is logged: "Change Accepted by [Parent's Name] on [Timestamp]."
+            * **"Decline Change" button:** If clicked, the item's color/status will remain **desaturated** for *both* Parent A and Parent B. The action is logged: "Change Declined by [Parent's Name] on [Timestamp]." This indicates a dispute that requires further discussion outside the app's direct resolution. The change itself is not reverted.
+            * **"Accept All Changes" button:** A prominent button, likely at the top of the screen or within a bottom sheet/modal that appears when *any* pending changes are visible. Clicking this will:
+                1.  Apply the "Accept Change" action to *all* pending changes visible to Parent B.
+                2.  Log each acceptance individually.
+                3.  Update the UI to reflect the accepted changes (full saturation, confirmed status).
+* **Forward Schedule Population:**
+    * A dedicated, full-screen **form or wizard** (accessible from a settings or options menu within the calendar view) will allow users to configure recurring schedules.
+    * The interface will use clear inputs for frequency (e.g., "Every other week"), starting date, and assigned parent.
+    * This automated population will **only affect future dates**.
+* **Historical Date Changes:**
+    * Changes to past dates are allowed using the same single-tap bottom sheet/modal flow.
+    * Any historical change will also trigger the "pending co-parenting review" (desaturated color) process and enable the "Share Updates" button.
+
+**4.2.3. Event Management:**
+
+* **Adding Events:**
+    * From the date's bottom sheet/modal, tapping "Add Event" will transition to a new, full-screen **event creation form**.
+    * **Form Fields:** Event Name (Text input, required), Time (Mobile-friendly time picker, optional), Location (Text input, optional), Description (Multi-line text input, optional), Which Child/Children (Clear multi-select toggles or checkboxes for each registered child's name).
+    * Upon creation/edit, the associated date on the calendar will appear **desaturated**, and the "Share Updates" button will activate.
+* **Viewing Events:**
+    * Dates with events will display a subtle, compact icon (e.g., a small dot, a calendar icon outline) on the date cell itself.
+    * Tapping on a date with an event will open the bottom sheet/modal, which will then display a scrollable list of all events for that day. Tapping an individual event in this list will open a new, full-screen **event detail view**.
+* **Editing/Deleting Events:**
+    * On the full-screen event detail view, prominent "Edit" and "Delete" buttons will be present.
+    * "Delete" will trigger a confirmation dialog (e.g., a simple, clear modal with "Are you sure?" and "Confirm Delete" / "Cancel" buttons).
+    * Editing or deleting an event will also make the associated date **desaturated** and activate the "Share Updates" button.
+
+**4.2.4. Total Parent Days Calculation:**
+
+* **Display:** A compact, clearly labeled summary will be displayed at the top or bottom of the current month's calendar view. Examples: "Mom: 15 days | Dad: 16 days". This summary will update dynamically with changes.
+
+**4.2.5. IP-Based Change Tracking Log:**
+
+* This is a backend-only feature for auditing and troubleshooting; it has no user-facing UI in the mobile application. All actions (changes, accepts, declines, shares, notifications) will be meticulously logged with user ID, timestamp, IP address, and details of the action.
+
+### 4.3. Shared To-Do List Module
+
+**4.3.1. Navigation & Display:**
+
+* Accessible via a dedicated tab in the **bottom navigation bar**.
+* Displays a vertically scrollable list of tasks.
+* Tasks will be presented as clean, individual cards or list items.
+* When a task is added or completed, it will appear with a **desaturated** visual state on its card/list item, indicating it's pending review, and activate the "Share Updates" button.
+
+**4.3.2. Task Creation:**
+
+* A prominent **Floating Action Button (FAB)**, or a "Add Task" button at the top of the screen, will open a full-screen **task creation form**.
+* **Form Fields:** Task Name (Text input, required), Description (Multi-line text area, optional), Due Date (Mobile-friendly date picker, optional), Assigned Parent (Clear radio buttons or toggle switch for "Mom" / "Dad"), Status (Simple checkbox: "Completed," unchecked by default).
+
+**4.3.3. Task Management:**
+
+* **Interactive List Items:** Each task item will feature a clear checkbox or toggle for quick completion.
+* **Task Details:** Tapping a task item will navigate to a full-screen **task detail view** allowing for editing all fields.
+* **Filtering/Sorting:** A compact filter/sort icon (e.g., a funnel icon or three dots) at the top right of the task list will open a **bottom sheet or modal** with clear options (e.g., "Show All," "Show Open," "Show Completed," "Filter by Mom/Dad," "Sort by Due Date").
+* **Editing:** "Edit" button on the task detail screen.
+* **Deleting:** "Delete" button on the task detail screen, with confirmation modal.
+* **Visibility:** All tasks are visible to both parents.
+
+### 4.4. Expenses Module
+
+**4.4.1. Navigation & Display:**
+
+* Accessible via a dedicated tab in the **bottom navigation bar**.
+* Displays a vertically scrollable list of expense entries.
+* Each expense will be a clear card or list item, prominently showing description, amount, and who paid.
+* When an expense is added or edited, it will appear with a **desaturated** visual state on its card/list item, indicating it's pending review, and activate the "Share Updates" button.
+
+**4.4.2. Expense Addition:**
+
+* A prominent **Floating Action Button (FAB)** or "Add Expense" button will open a full-screen **expense creation form**.
+* **Form Fields:**
+    * Expense Name/Description (Text input, required)
+    * Amount (Numerical input with clear currency formatting, using number keyboard for mobile)
+    * Date Paid (Mobile-friendly date picker, required)
+    * Paid By (Clear radio buttons or toggle for "Mom" / "Dad")
+    * Who is it for (Multi-select toggles or checkboxes for registered children or an "All Children" option)
+    * Category (Dropdown/picker with a predefined list: e.g., Medical, School, Extracurricular, Clothing, Supplies, Other - optional)
+    * Notes (Multi-line text area, optional)
+
+**4.4.3. Expense Tracking:**
+
+* **Interactive List Items:** Tapping an expense item will navigate to a full-screen **expense detail view**.
+
+**4.4.4. Expense Management:**
+
+* **Editing:** "Edit" button on the expense detail screen.
+* **Deleting:** "Delete" button on the expense detail screen, with confirmation modal.
+
+**4.4.5. Summary/Reporting (Basic):**
+
+* A compact, always-visible summary (e.g., a collapsible bar or card) at the top of the expenses list, showing "Mom Paid: $XXX | Dad Paid: $YYY". This summary updates dynamically.
+
+### 4.5. Notifications (In-App Only)
+
+* **Type:** Primarily in-app notifications.
+* **Delivery:**
+    * **In-App:** Discreet, non-intrusive banners or toasts that appear temporarily at the top or bottom of the screen. A dedicated "Notifications" icon (e.g., a bell) in the header could show a badge for unread notifications, leading to a full-screen notification log.
+* **Frequency:** In-app notifications will provide timely alerts on changes. The explicit "Share Updates" feature handles external communication.
+* **Content:** Concise, action-oriented, and personalized messages (e.g., "Schedule updated by Mom," "Dad added a new expense").
+
+### 4.6. User Management & Authentication
+
+* **Account Creation:** A streamlined, multi-step onboarding process (if needed) or a single-screen form for initial registration. Clear input fields and large, primary action buttons.
+* **Login:** Dedicated login screen with email and password fields. Support for "Forgot Password" flow.
+* **Co-Parent Linking:** A clear, guided flow for one parent to invite the other via email. The invited parent clicks a link, completes a simple registration, and is automatically linked to the existing family account.
+* **Profile:** A simple, editable profile screen accessible from a settings menu (likely in a hamburger menu or profile icon in the top header). Allows updating names, managing children's names, etc.
+
+### 4.7. Logout Flow Reminder
+
+* **Trigger:** When a user attempts to log out.
+* **Prompt (Mobile Modal):** If unshared changes (i.e., changes for which the "Share Updates" button was *not* yet clicked, or the current user is awaiting the co-parent's *acceptance*) are still present, a moderate, non-blocking modal dialog will appear as a final reminder.
+    * **Title:** "Pending Updates" or "Don't Forget to Share!"
+    * **Message:** "You have recent changes that haven't been shared or accepted by your co-parent. Make sure they're aware!"
+    * **Options:** "Log Out Anyway" (primary action) and "Go Back" (to app). This ensures the user is aware but doesn't force sharing at logout, as the primary "Share Updates" button handles proactive notification.
+
+**5. User Interface (UI) / User Experience (UX) - Mobile-Only Focus**
+
+* **Component-Driven Design:** Emphasis on using well-designed, reusable UI components for consistency and rapid development.
+* **Visual Clarity:** Focus on high contrast, legible typography (system fonts where appropriate for performance), and intuitive iconography.
+* **Ergonomics:** Placement of primary action buttons (FABs, primary CTAs) within easy thumb reach.
+* **Direct Manipulation:** Design interactions to feel direct and responsive, minimizing perceived latency.
+* **Gestural Support:** Incorporate intuitive gestures (e.g., horizontal swipes for calendar navigation, swipe-to-dismiss for modals) where appropriate.
+* **Loading States:** Implement subtle loading indicators (e.g., skeleton screens, spinners) for network operations.
+* **Error Handling:** Clear, user-friendly error messages that guide the user to a solution.
+* **Accessibility:** Ensure basic mobile accessibility standards are met (e.g., appropriate touch target sizes, semantic HTML, ARIA attributes where necessary for screen readers, sufficient color contrast, keyboard navigation if a Bluetooth keyboard is used).
+
+**6. Technical Considerations (High-Level)**
+
+* **Frontend:** A modern JavaScript framework that excels in building mobile-first, component-based UIs. Utilize a robust UI component library that aligns with the desired aesthetic and provides mobile-optimized components.
+* **Backend:** A robust framework (e.g., Node.js with Express, Python with Django/Flask, Ruby on Rails) for handling user authentication, data storage, and business logic.
+* **Database:** A relational database (e.g., PostgreSQL, MySQL) for structured data storage.
+* **Hosting:** Cloud-based hosting optimized for web application performance.
+* **Security:** Implement industry-standard security practices (e.g., password hashing, secure authentication, input validation, protection against common web vulnerabilities like XSS, CSRF). Ensure secure generation and validation of share links to prevent unauthorized access.
+* **Version Control:** Git for source code management.
+
+**7. Future Enhancements (Out of Scope for V1.0 - Mobile-Only Web App)**
+
+* Native mobile applications (iOS/Android) for deeper OS integration (push notifications, widgets, offline capabilities).
+* Integrated real-time chat/messaging.
+* Advanced financial reporting (e.g., automatic reimbursement calculations).
+* More complex, customizable recurring schedule rules.
+* Integration with external calendars (e.g., Google Calendar, Apple Calendar).
+* File attachments to expenses or events.
+
+**8. Success Metrics**
+
+* High mobile user engagement and daily/weekly active users.
+* Positive user feedback specifically regarding mobile UI/UX and performance.
+* High utilization of the "Share Updates" feature and "Accept Change" actions.
+* Low bounce rates and high task completion rates on mobile devices.
+* Minimal bug reports related to mobile functionality.
+* Fast page load times and responsive interactions on a variety of mobile devices.
+
+**9. Project Phases (High-Level)**
+
+1.  **Discovery & Planning:** Finalize detailed requirements, create **high-fidelity mobile wireframes/mockups**, including the "Share Updates" button, its associated modals/sheets, and the "Accept All" functionality.
+2.  **Design:** Comprehensive UI/UX design (mobile-first, component-driven), detailed database schema design.
+3.  **Development:**
+    * Backend development (API design, database integration, share link generation/tracking, robust logging for all actions).
+    * Frontend development (**mobile-only UI implementation** using chosen component principles).
+    * User authentication and co-parent linking.
+    * Calendar module (UI, logic, data, pending state management).
+    * To-Do List module (UI, logic, data, pending state management).
+    * Expenses module (UI, logic, data, pending state management).
+    * Basic in-app notification system.
+    * **Implementation of the "Share Updates" button, "Share via Link," and "I've Already Notified Co-Parent" flows.**
+    * **Implementation of the co-parent "Accept/Decline" flow for pending changes.**
+    * **Implementation of the "Accept All" functionality for Parent B.**
+    * IP-based change tracking.
+4.  **Testing:** Intensive unit testing, integration testing, and **rigorous testing across various mobile devices and browsers**. User acceptance testing (UAT) conducted primarily on mobile, with specific focus on the new sharing and pending status flows, and the "Accept All" functionality.
+5.  **Deployment:** Setup optimized production environment for mobile web access, launch.
+6.  **Post-Launch:** Continuous monitoring of mobile performance, user feedback analysis, maintenance, bug fixing, and iterative improvements.
+
