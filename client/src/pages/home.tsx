@@ -5,6 +5,7 @@ import TodoView from "@/components/todo-view";
 import ExpensesView from "@/components/expenses-view";
 import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
+import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Bell, User } from "lucide-react";
@@ -14,6 +15,7 @@ type ViewType = "calendar" | "todo" | "expenses";
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
   const [currentUser, setCurrentUser] = useState<"mom" | "dad">("mom");
   const queryClient = useQueryClient();
 
@@ -96,10 +98,10 @@ export default function Home() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleAcceptAll}
+                onClick={() => setShowDetailedNotifications(true)}
                 className="text-orange-700 border-orange-300 hover:bg-orange-100"
               >
-                Accept All
+                Review Changes
               </Button>
               <Button
                 size="sm"
@@ -129,6 +131,13 @@ export default function Home() {
         onOpenChange={setShowShareModal}
         pendingCount={pendingCount}
         pendingItems={pendingItems}
+      />
+
+      {/* Detailed Notifications Modal */}
+      <DetailedNotificationsModal
+        open={showDetailedNotifications}
+        onOpenChange={setShowDetailedNotifications}
+        pendingItems={pendingItems || { assignments: [], events: [], tasks: [], expenses: [] }}
       />
     </div>
   );
