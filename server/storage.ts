@@ -25,7 +25,7 @@ import {
   type InsertTeenPermissions
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like, ne } from "drizzle-orm";
+import { eq, and, like, ne, or } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -437,6 +437,18 @@ export class DatabaseStorage implements IStorage {
         ne(events.createdBy, userId) // Don't show items created by current user
       ));
 
+    // Also get cancelled events for approval
+    const cancelledEvents = await db
+      .select()
+      .from(events)
+      .where(and(
+        eq(events.status, "cancelled"),
+        ne(events.createdBy, userId) // Don't show items created by current user
+      ));
+
+    // Combine pending and cancelled events
+    const allPendingEvents = [...pendingEvents, ...cancelledEvents];
+
     const pendingTasks = await db
       .select()
       .from(tasks)
@@ -455,7 +467,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       assignments: pendingAssignments,
-      events: pendingEvents,
+      events: allPendingEvents,
       tasks: pendingTasks,
       expenses: pendingExpenses
     };
@@ -509,10 +521,18 @@ export class DatabaseStorage implements IStorage {
           .where(eq(calendarAssignments.id, itemId));
         break;
       case "event":
-        await db
-          .update(events)
-          .set({ status: "confirmed" })
-          .where(eq(events.id, itemId));
+        // Check if the event is cancelled (deletion request) or pending (creation request)
+        const [eventToUpdate] = await db.select().from(events).where(eq(events.id, itemId));
+        if (eventToUpdate?.status === "cancelled") {
+          // Actually delete cancelled events when approved
+          await db.delete(events).where(eq(events.id, itemId));
+        } else {
+          // Confirm pending events
+          await db
+            .update(events)
+            .set({ status: "confirmed" })
+            .where(eq(events.id, itemId));
+        }
         break;
       case "task":
         await db

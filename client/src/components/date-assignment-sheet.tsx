@@ -180,6 +180,16 @@ export default function DateAssignmentSheet({
                       <div>
                         <h5 className="text-sm font-medium text-blue-900">
                           {event.name}
+                          {event.status === "pending" && (
+                            <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                              PENDING
+                            </span>
+                          )}
+                          {event.status === "cancelled" && (
+                            <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                              CANCELLED
+                            </span>
+                          )}
                         </h5>
                         <div className="flex items-center space-x-2 text-xs text-blue-700 mt-1">
                           {event.time && (
