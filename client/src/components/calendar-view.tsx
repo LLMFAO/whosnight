@@ -18,7 +18,17 @@ export default function CalendarView() {
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["/api/calendar/assignments", monthString],
+    queryFn: () => fetch(`/api/calendar/assignments/${monthString}`, {
+      credentials: "include"
+    }).then(res => res.json()),
   });
+  
+  // Ensure assignments is always an array
+  const assignmentsArray = Array.isArray(assignments) ? assignments : [];
+  
+  // Debug logging
+  console.log('Month string:', monthString, 'Assignments data:', assignments, 'Array:', assignmentsArray);
+  console.log('Query URL would be:', `/api/calendar/assignments/${monthString}`);
 
   const { data: eventsForSelectedDate = [] } = useQuery({
     queryKey: ["/api/events", selectedDate ? formatDate(selectedDate) : ""],
@@ -70,10 +80,10 @@ export default function CalendarView() {
   });
 
   const calendarDays = getCalendarDays(currentMonth);
-  const assignmentMap = new Map(assignments.map((a: any) => [a.date, a]));
+  const assignmentMap = new Map(assignmentsArray.map((a: any) => [a.date, a]));
 
-  const momDaysCount = assignments.filter((a: any) => a.assignedTo === "mom").length;
-  const dadDaysCount = assignments.filter((a: any) => a.assignedTo === "dad").length;
+  const momDaysCount = assignmentsArray.filter((a: any) => a.assignedTo === "mom").length;
+  const dadDaysCount = assignmentsArray.filter((a: any) => a.assignedTo === "dad").length;
 
   const handleDateSelect = (date: Date, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return;
