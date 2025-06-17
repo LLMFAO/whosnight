@@ -62,7 +62,7 @@ export default function UserRequestHistoryModal({
   const currentUser = localStorage.getItem('currentUser') || 'mom';
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['my-requests'],
+    queryKey: ['my-requests', currentUser],
     queryFn: () => fetch('/api/my-requests', {
       headers: { 'x-user': currentUser }
     }).then(res => res.json()),
@@ -83,7 +83,7 @@ export default function UserRequestHistoryModal({
         title: "Change undone successfully",
         description: "Your request has been reverted to its previous state."
       });
-      queryClient.invalidateQueries({ queryKey: ['my-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['my-requests', currentUser] });
       queryClient.invalidateQueries({ queryKey: ['calendar'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -119,6 +119,12 @@ export default function UserRequestHistoryModal({
     
     if (hasBeenUndone) return 'undone';
     if (request.approvedBy) return 'approved';
+    
+    // Most actions are automatically approved/completed, not pending
+    if (['create_calendar_assignment', 'update_calendar_assignment', 'create_event', 'update_event', 'create_task', 'update_task', 'cancel_event', 'accept_pending_item', 'accept_all_pending'].includes(request.action)) {
+      return 'completed';
+    }
+    
     return 'pending';
   };
 
@@ -151,7 +157,7 @@ export default function UserRequestHistoryModal({
             </div>
           ) : (
             <div className="space-y-6">
-              {['pending', 'approved', 'undone'].map(status => {
+              {['pending', 'completed', 'approved', 'undone'].map(status => {
                 const statusRequests = groupedRequests[status] || [];
                 if (statusRequests.length === 0) return null;
 
