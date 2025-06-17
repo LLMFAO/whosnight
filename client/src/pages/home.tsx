@@ -17,11 +17,17 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
-  const [currentUser, setCurrentUser] = useState<"mom" | "dad" | "teen">("mom");
+  const [currentUser, setCurrentUser] = useState<"mom" | "dad" | "teen">(() => {
+    // Initialize based on URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const userParam = urlParams.get('user') as "mom" | "dad" | "teen";
+    return userParam && ['mom', 'dad', 'teen'].includes(userParam) ? userParam : "mom";
+  });
   const queryClient = useQueryClient();
 
   const { data: pendingItems } = useQuery({
-    queryKey: ["/api/pending"],
+    queryKey: ["/api/pending", currentUser],
+    queryFn: () => fetch(`/api/pending?user=${currentUser}`).then(res => res.json()),
     refetchInterval: 5000, // Check for updates every 5 seconds
   });
 

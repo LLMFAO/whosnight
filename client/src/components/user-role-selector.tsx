@@ -11,15 +11,21 @@ import { Settings } from "lucide-react";
 import TeenPermissionsModal from "./teen-permissions-modal";
 
 interface UserRoleSelectorProps {
-  currentRole: string;
-  onRoleChange: (role: string) => void;
+  currentRole: "mom" | "dad" | "teen";
+  onRoleChange: (role: "mom" | "dad" | "teen") => void;
 }
 
 export default function UserRoleSelector({ currentRole, onRoleChange }: UserRoleSelectorProps) {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
 
   const handleRoleChange = (newRole: string) => {
-    onRoleChange(newRole);
+    const validRole = newRole as "mom" | "dad" | "teen";
+    // Update URL parameter to maintain user context
+    const url = new URL(window.location.href);
+    url.searchParams.set('user', newRole);
+    window.history.replaceState({}, '', url);
+    
+    onRoleChange(validRole);
     // Reload the page to switch user context
     window.location.reload();
   };
