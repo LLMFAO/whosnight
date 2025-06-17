@@ -78,6 +78,21 @@ export default function ChangeHistoryModal({
     enabled: open,
   });
 
+  // Get current assignment status
+  const { data: currentAssignment } = useQuery({
+    queryKey: ['current-assignment', entityType, entityId],
+    queryFn: async () => {
+      if (entityType === 'calendar_assignment' && entityId > 0) {
+        const response = await fetch(`/api/calendar/assignment/${entityId}`, {
+          headers: { 'x-user': currentUser }
+        });
+        return response.ok ? response.json() : null;
+      }
+      return null;
+    },
+    enabled: open && entityType === 'calendar_assignment' && entityId > 0,
+  });
+
   const undoMutation = useMutation({
     mutationFn: async (logId: number) => {
       const response = await fetch(`/api/undo/${logId}`, {

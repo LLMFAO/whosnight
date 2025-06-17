@@ -36,6 +36,7 @@ export interface IStorage {
   // Calendar Assignments
   getCalendarAssignments(month: string): Promise<CalendarAssignment[]>;
   getCalendarAssignment(date: string): Promise<CalendarAssignment | undefined>;
+  getCalendarAssignmentById(id: number): Promise<CalendarAssignment | undefined>;
   createCalendarAssignment(assignment: InsertCalendarAssignment): Promise<CalendarAssignment>;
   updateCalendarAssignment(id: number, updates: Partial<CalendarAssignment>): Promise<CalendarAssignment | undefined>;
   deleteCalendarAssignment(id: number): Promise<boolean>;
@@ -392,6 +393,20 @@ export class DatabaseStorage implements IStorage {
     tasks: Task[];
     expenses: Expense[];
   }> {
+    // For teens (userId 3), show nothing - they can't approve items
+    // For parents (userId 1 or 2), show items that need their approval
+    // Parents should see items created by other users (including the other parent and teens)
+    const isParent = userId === 1 || userId === 2;
+    
+    if (!isParent) {
+      return {
+        assignments: [],
+        events: [],
+        tasks: [],
+        expenses: []
+      };
+    }
+
     const pendingAssignments = await db
       .select()
       .from(calendarAssignments)
