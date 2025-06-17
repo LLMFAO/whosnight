@@ -192,6 +192,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/events/:id", mockAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const event = await storage.getEvent(parseInt(id));
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Instead of actually deleting, mark as cancelled pending approval
+      const updated = await storage.updateEvent(parseInt(id), { 
+        status: "cancelled" 
+      });
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Log the action
+      await storage.createActionLog({
+        userId: req.user.id,
+        action: "cancel_event",
+        entityType: "event",
+        entityId: parseInt(id),
+        details: `Cancelled event "${event.name}"`,
+        ipAddress: getClientIP(req),
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to cancel event" });
+    }
+  });
+
   // Tasks routes
   app.get("/api/tasks", mockAuth, async (req, res) => {
     try {

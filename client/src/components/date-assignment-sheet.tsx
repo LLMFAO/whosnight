@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { User, X, Plus, MapPin, Clock, Edit, History } from "lucide-react";
+import { User, X, Plus, MapPin, Clock, Edit, History, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,22 @@ export default function DateAssignmentSheet({
       setEventForm({ name: "", time: "", location: "", description: "", children: [] });
     },
   });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      return await apiRequest("DELETE", `/api/events/${eventId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+    },
+  });
+
+  const handleDeleteEvent = (event: any) => {
+    if (window.confirm(`Are you sure you want to cancel "${event.name}"? This will require approval from the other parent.`)) {
+      deleteEventMutation.mutate(event.id);
+    }
+  };
 
   const handleEditEvent = (event: any) => {
     setEditingEvent(event);
@@ -155,6 +171,8 @@ export default function DateAssignmentSheet({
                     className={`border rounded-lg p-3 ${
                       event.status === "pending" 
                         ? "bg-blue-50 border-blue-200 border-dashed" 
+                        : event.status === "cancelled"
+                        ? "bg-red-50 border-red-200 border-dashed"
                         : "bg-white border-gray-200"
                     }`}
                   >
@@ -178,13 +196,23 @@ export default function DateAssignmentSheet({
                           )}
                         </div>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleEditEvent(event)}
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleEditEvent(event)}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleDeleteEvent(event)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
