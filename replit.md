@@ -120,6 +120,7 @@ RESTful endpoints for:
 Changelog:
 - June 17, 2025. Initial setup
 - June 17, 2025. Fixed calendar color system with immediate optimistic updates and proper pending/confirmed status workflow
+- June 17, 2025. Implemented teen user role with configurable permissions system - parents can control teen access (read-only or specific modification permissions for calendar, events, tasks, and expenses)
 ```
 
 ## User Preferences

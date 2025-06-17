@@ -56,10 +56,10 @@ export default function TeenPermissionsModal({
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async (updatedPermissions: Partial<TeenPermissions>) => {
-      return await apiRequest({
-        url: `/api/teen-permissions/${teenUserId}`,
+      return await apiRequest(`/api/teen-permissions/${teenUserId}`, {
         method: 'PUT',
-        body: updatedPermissions,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPermissions),
       });
     },
     onSuccess: () => {

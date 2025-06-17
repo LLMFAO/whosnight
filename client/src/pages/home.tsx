@@ -6,6 +6,7 @@ import ExpensesView from "@/components/expenses-view";
 import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
+import UserRoleSelector from "@/components/user-role-selector";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Bell, User } from "lucide-react";
@@ -16,7 +17,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
-  const [currentUser, setCurrentUser] = useState<"mom" | "dad">("mom");
+  const [currentUser, setCurrentUser] = useState<"mom" | "dad" | "teen">("mom");
   const queryClient = useQueryClient();
 
   const { data: pendingItems } = useQuery({
@@ -51,15 +52,25 @@ export default function Home() {
     }
   };
 
-  const handleUserSwitch = (user: "mom" | "dad") => {
+  const handleUserSwitch = (user: "mom" | "dad" | "teen") => {
     setCurrentUser(user);
+    // Update URL parameter to maintain user context
+    const url = new URL(window.location.href);
+    url.searchParams.set('user', user);
+    window.history.replaceState({}, '', url);
     // Clear cache to refetch data for new user
     queryClient.clear();
   };
 
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen relative">
-      {/* User Switcher for Demo */}
+      {/* User Role Selector */}
+      <UserRoleSelector
+        currentRole={currentUser}
+        onRoleChange={handleUserSwitch}
+      />
+
+      {/* Header with Notifications */}
       <div className="bg-gray-100 border-b border-gray-200 p-2">
         <div className="flex items-center justify-center space-x-2">
           <span className="text-xs text-gray-600">Demo Mode:</span>
