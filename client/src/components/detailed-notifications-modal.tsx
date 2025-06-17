@@ -134,7 +134,7 @@ export default function DetailedNotificationsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-lg sm:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
@@ -168,34 +168,36 @@ export default function DetailedNotificationsModal({
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingItems.assignments.map((assignment: any) => (
-                  <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">
-                        {formatDisplayDate(new Date(assignment.date))}
-                      </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div>
-                          Assigned to: <Badge className={assignment.assignedTo === "mom" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"}>
-                            {assignment.assignedTo === "mom" ? "Mom" : "Dad"}
-                          </Badge>
+                  <div key={assignment.id} className="p-3 border rounded-lg">
+                    <div className="space-y-3">
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {formatDisplayDate(new Date(assignment.date))}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          Requested by: <span className={assignment.createdBy === 1 ? "text-red-600 font-medium" : assignment.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
-                            {assignment.createdBy === 1 ? "Mom" : assignment.createdBy === 2 ? "Dad" : "Teen"}
-                          </span>
+                        <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <div>
+                            Assigned to: <Badge className={assignment.assignedTo === "mom" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"}>
+                              {assignment.assignedTo === "mom" ? "Mom" : "Dad"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            Requested by: <span className={assignment.createdBy === 1 ? "text-red-600 font-medium" : assignment.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                              {assignment.createdBy === 1 ? "Mom" : assignment.createdBy === 2 ? "Dad" : "Teen"}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcceptItem("assignment", assignment.id)}
+                        disabled={acceptItemMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Accept
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAcceptItem("assignment", assignment.id)}
-                      disabled={acceptItemMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Accept
-                    </Button>
                   </div>
                 ))}
               </CardContent>
@@ -216,29 +218,31 @@ export default function DetailedNotificationsModal({
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingItems.events.map((event: any) => (
-                  <div key={event.id} className={`flex items-center justify-between p-3 border rounded-lg ${
+                  <div key={event.id} className={`p-3 border rounded-lg ${
                     event.status === 'cancelled' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
                   }`}>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium">{event.name}</div>
-                        {event.status === 'cancelled' && (
-                          <Badge className="bg-red-100 text-red-700 text-xs">
-                            CANCELLATION REQUEST
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div>
-                          {formatDisplayDate(new Date(event.date))}
-                          {event.time && ` at ${event.time}`}
-                          {event.location && ` • ${event.location}`}
+                    <div className="space-y-3">
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <div className="font-medium">{event.name}</div>
+                          {event.status === 'cancelled' && (
+                            <Badge className="bg-red-100 text-red-700 text-xs w-fit">
+                              CANCELLATION REQUEST
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          Requested by: <span className={event.createdBy === 1 ? "text-red-600 font-medium" : event.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
-                            {event.createdBy === 1 ? "Mom" : event.createdBy === 2 ? "Dad" : "Teen"}
-                          </span>
+                        <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <div>
+                            {formatDisplayDate(new Date(event.date))}
+                            {event.time && ` at ${event.time}`}
+                            {event.location && ` • ${event.location}`}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            Requested by: <span className={event.createdBy === 1 ? "text-red-600 font-medium" : event.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                              {event.createdBy === 1 ? "Mom" : event.createdBy === 2 ? "Dad" : "Teen"}
+                            </span>
+                          </div>
                         </div>
                         {event.status === 'cancelled' && (() => {
                           const reason = getCancellationReason(event.id);
@@ -249,16 +253,16 @@ export default function DetailedNotificationsModal({
                           ) : null;
                         })()}
                       </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcceptItem("event", event.id)}
+                        disabled={acceptItemMutation.isPending}
+                        className={`${event.status === 'cancelled' ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} w-full sm:w-auto`}
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        {event.status === 'cancelled' ? 'Approve Cancellation' : 'Accept'}
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAcceptItem("event", event.id)}
-                      disabled={acceptItemMutation.isPending}
-                      className={event.status === 'cancelled' ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      {event.status === 'cancelled' ? 'Approve Cancellation' : 'Accept'}
-                    </Button>
                   </div>
                 ))}
               </CardContent>
@@ -279,31 +283,33 @@ export default function DetailedNotificationsModal({
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingItems.tasks.map((task: any) => (
-                  <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{task.name}</div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div>
-                          Assigned to: <Badge variant="outline">{task.assignedTo}</Badge>
-                          {task.dueDate && ` • Due: ${formatDisplayDate(new Date(task.dueDate))}`}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          Requested by: <span className={task.createdBy === 1 ? "text-red-600 font-medium" : task.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
-                            {task.createdBy === 1 ? "Mom" : task.createdBy === 2 ? "Dad" : "Teen"}
-                          </span>
+                  <div key={task.id} className="p-3 border rounded-lg">
+                    <div className="space-y-3">
+                      <div className="flex-1">
+                        <div className="font-medium">{task.name}</div>
+                        <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <div>
+                            Assigned to: <Badge variant="outline">{task.assignedTo}</Badge>
+                            {task.dueDate && ` • Due: ${formatDisplayDate(new Date(task.dueDate))}`}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            Requested by: <span className={task.createdBy === 1 ? "text-red-600 font-medium" : task.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
+                              {task.createdBy === 1 ? "Mom" : task.createdBy === 2 ? "Dad" : "Teen"}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcceptItem("task", task.id)}
+                        disabled={acceptItemMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Accept
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAcceptItem("task", task.id)}
-                      disabled={acceptItemMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Accept
-                    </Button>
                   </div>
                 ))}
               </CardContent>
