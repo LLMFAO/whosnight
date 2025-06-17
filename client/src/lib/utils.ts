@@ -74,8 +74,7 @@ export function getPendingItemsCount(pendingItems: any) {
   return (
     (pendingItems?.assignments?.length || 0) +
     (pendingItems?.events?.length || 0) +
-    (pendingItems?.tasks?.length || 0) +
-    (pendingItems?.expenses?.length || 0)
+    (pendingItems?.tasks?.length || 0)
   )
 }
 

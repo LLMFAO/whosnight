@@ -126,6 +126,7 @@ Changelog:
 - June 17, 2025. Improved event visibility by changing event dots from blue to white with gray border - now visible on all colored date backgrounds
 - June 17, 2025. Enhanced change history with user-friendly labels ("Night assigned", "Approved") instead of technical terms and improved timestamp formatting
 - June 17, 2025. Implemented auto-disable read-only mode when individual teen permissions are granted - provides visual feedback to parents
+- June 17, 2025. Removed expense section completely - streamlined app to focus on calendar and task management only
 ```
 
 ## User Preferences
