@@ -33,6 +33,9 @@ export default function DateAssignmentSheet({
 }: DateAssignmentSheetProps) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  
+  // Debug log to check what events are being passed
+  console.log("DateAssignmentSheet events:", events, "length:", events?.length);
   const [eventForm, setEventForm] = useState({
     name: "",
     time: "",
@@ -127,7 +130,7 @@ export default function DateAssignmentSheet({
           </div>
 
           {/* Events for selected date */}
-          {events.length > 0 && (
+          {events && events.length > 0 && (
             <div className="mt-6">
               <h4 className="text-sm font-medium text-gray-900 mb-3">Events on this date</h4>
               <div className="space-y-2">
