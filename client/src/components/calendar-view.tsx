@@ -29,8 +29,39 @@ export default function CalendarView() {
     mutationFn: async (data: { date: string; assignedTo: string | null }) => {
       return await apiRequest("POST", "/api/calendar/assignments", data);
     },
+    onMutate: async (newAssignment) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/calendar/assignments", monthString] });
+      
+      // Snapshot the previous value
+      const previousAssignments = queryClient.getQueryData(["/api/calendar/assignments", monthString]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/calendar/assignments", monthString], (old: any[]) => {
+        const existingAssignments = old || [];
+        const filteredAssignments = existingAssignments.filter((a: any) => a.date !== newAssignment.date);
+        
+        if (newAssignment.assignedTo) {
+          return [...filteredAssignments, {
+            date: newAssignment.date,
+            assignedTo: newAssignment.assignedTo,
+            status: "pending",
+            id: Date.now(), // temporary ID
+            createdBy: 1,
+            createdAt: new Date().toISOString()
+          }];
+        }
+        return filteredAssignments;
+      });
+      
+      return { previousAssignments };
+    },
+    onError: (err, newAssignment, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      queryClient.setQueryData(["/api/calendar/assignments", monthString], context?.previousAssignments);
+    },
     onSuccess: () => {
-      // Invalidate both the specific month and pending queries to refresh the UI
+      // Invalidate queries to get the real data from server
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments", monthString] });
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
