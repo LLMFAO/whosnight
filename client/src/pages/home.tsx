@@ -85,10 +85,9 @@ export default function Home() {
             variant="ghost"
             size="sm"
             onClick={() => setShowRequestHistory(true)}
-            className="gap-1"
+            className="p-2"
           >
             <History className="h-4 w-4" />
-            History
           </Button>
           
           {showNotificationBadge && (

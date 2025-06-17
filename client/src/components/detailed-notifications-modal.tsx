@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, DollarSign, CheckSquare, Check, X } from "lucide-react";
+import { Calendar, Clock, DollarSign, CheckSquare, Check, X, User } from "lucide-react";
 import { formatDisplayDate } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -153,10 +153,16 @@ export default function DetailedNotificationsModal({
                       <div className="font-medium">
                         {formatDisplayDate(new Date(assignment.date))}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Assigned to: <Badge variant={assignment.assignedTo === "mom" ? "default" : "secondary"}>
-                          {assignment.assignedTo === "mom" ? "Mom" : "Dad"}
-                        </Badge>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>
+                          Assigned to: <Badge variant={assignment.assignedTo === "mom" ? "default" : "secondary"}>
+                            {assignment.assignedTo === "mom" ? "Mom" : "Dad"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          Requested by: {assignment.createdBy === 1 ? "Mom" : assignment.createdBy === 2 ? "Dad" : "Teen"}
+                        </div>
                       </div>
                     </div>
                     <Button
@@ -191,10 +197,16 @@ export default function DetailedNotificationsModal({
                   <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="font-medium">{event.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDisplayDate(new Date(event.date))}
-                        {event.time && ` at ${event.time}`}
-                        {event.location && ` • ${event.location}`}
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>
+                          {formatDisplayDate(new Date(event.date))}
+                          {event.time && ` at ${event.time}`}
+                          {event.location && ` • ${event.location}`}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          Requested by: {event.createdBy === 1 ? "Mom" : event.createdBy === 2 ? "Dad" : "Teen"}
+                        </div>
                       </div>
                     </div>
                     <Button
@@ -229,9 +241,15 @@ export default function DetailedNotificationsModal({
                   <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="font-medium">{task.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Assigned to: <Badge variant="outline">{task.assignedTo}</Badge>
-                        {task.dueDate && ` • Due: ${formatDisplayDate(new Date(task.dueDate))}`}
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>
+                          Assigned to: <Badge variant="outline">{task.assignedTo}</Badge>
+                          {task.dueDate && ` • Due: ${formatDisplayDate(new Date(task.dueDate))}`}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          Requested by: {task.createdBy === 1 ? "Mom" : task.createdBy === 2 ? "Dad" : "Teen"}
+                        </div>
                       </div>
                     </div>
                     <Button
@@ -266,9 +284,15 @@ export default function DetailedNotificationsModal({
                   <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="font-medium">{expense.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        ${expense.amount} • {expense.category} • Paid by: {expense.paidBy}
-                        {expense.date && ` • ${formatDisplayDate(new Date(expense.date))}`}
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>
+                          ${expense.amount} • {expense.category} • Paid by: {expense.paidBy}
+                          {expense.date && ` • ${formatDisplayDate(new Date(expense.date))}`}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          Requested by: {expense.createdBy === 1 ? "Mom" : expense.createdBy === 2 ? "Dad" : "Teen"}
+                        </div>
                       </div>
                     </div>
                     <Button
