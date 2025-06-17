@@ -67,7 +67,6 @@ export default function DetailedNotificationsModal({
       queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       toast({
         title: "Item accepted",
         description: "The change has been confirmed.",
@@ -101,7 +100,6 @@ export default function DetailedNotificationsModal({
       queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       toast({
         title: "All items accepted",
         description: "All pending changes have been confirmed.",
@@ -128,8 +126,7 @@ export default function DetailedNotificationsModal({
   const totalPendingCount = 
     pendingItems.assignments.length + 
     pendingItems.events.length + 
-    pendingItems.tasks.length + 
-    pendingItems.expenses.length;
+    pendingItems.tasks.length;
 
   if (totalPendingCount === 0) {
     return null;
@@ -313,50 +310,7 @@ export default function DetailedNotificationsModal({
             </Card>
           )}
 
-          {/* Expenses */}
-          {pendingItems.expenses.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Expenses ({pendingItems.expenses.length})
-                </CardTitle>
-                <CardDescription>
-                  Expense entries awaiting confirmation
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {pendingItems.expenses.map((expense: any) => (
-                  <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{expense.name}</div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div>
-                          ${expense.amount} • {expense.category} • Paid by: {expense.paidBy}
-                          {expense.date && ` • ${formatDisplayDate(new Date(expense.date))}`}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          Requested by: <span className={expense.createdBy === 1 ? "text-red-600 font-medium" : expense.createdBy === 2 ? "text-blue-600 font-medium" : "text-green-600 font-medium"}>
-                            {expense.createdBy === 1 ? "Mom" : expense.createdBy === 2 ? "Dad" : "Teen"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAcceptItem("expense", expense.id)}
-                      disabled={acceptItemMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Accept
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+
         </div>
       </DialogContent>
     </Dialog>

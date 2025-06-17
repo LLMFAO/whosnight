@@ -79,16 +79,4 @@ export function getPendingItemsCount(pendingItems: any) {
   )
 }
 
-export function formatCurrency(amount: string | number): string {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(num)
-}
 
-export function getExpensesSummary(expenses: any[], role: string) {
-  const userExpenses = expenses.filter(expense => expense.paidBy === role)
-  const total = userExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
-  return formatCurrency(total)
-}
