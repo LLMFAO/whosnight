@@ -56,11 +56,7 @@ export default function TeenPermissionsModal({
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async (updatedPermissions: Partial<TeenPermissions>) => {
-      return await apiRequest(`/api/teen-permissions/${teenUserId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPermissions),
-      });
+      return await apiRequest("PUT", `/api/teen-permissions/${teenUserId}`, updatedPermissions);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teen-permissions', teenUserId] });
