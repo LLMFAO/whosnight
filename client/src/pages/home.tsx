@@ -32,7 +32,7 @@ export default function Home() {
   });
 
   const pendingCount = getPendingItemsCount(pendingItems);
-  const showUpdatesBanner = pendingCount > 0;
+  const showUpdatesBanner = pendingCount > 0 && currentUser !== "teen";
 
   const handleAcceptAll = async () => {
     try {
