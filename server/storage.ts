@@ -197,7 +197,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(calendarAssignments)
       .where(eq(calendarAssignments.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Event methods
@@ -237,7 +237,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(events)
       .where(eq(events.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Task methods
@@ -276,7 +276,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(tasks)
       .where(eq(tasks.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Expense methods
@@ -321,7 +321,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(expenses)
       .where(eq(expenses.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Action Log methods
