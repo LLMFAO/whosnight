@@ -33,9 +33,6 @@ export default function DateAssignmentSheet({
 }: DateAssignmentSheetProps) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  
-  // Debug log to check what events are being passed
-  console.log("DateAssignmentSheet events:", events, "length:", events?.length);
   const [eventForm, setEventForm] = useState({
     name: "",
     time: "",

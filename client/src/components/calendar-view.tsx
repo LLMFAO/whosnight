@@ -58,6 +58,13 @@ export default function CalendarView() {
 
   const { data: eventsForSelectedDate = [] } = useQuery({
     queryKey: ["/api/events", selectedDate ? formatDate(selectedDate) : ""],
+    queryFn: async () => {
+      if (!selectedDate) return [];
+      const dateStr = formatDate(selectedDate);
+      const response = await fetch(`/api/events/${dateStr}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
     enabled: !!selectedDate,
   });
 
