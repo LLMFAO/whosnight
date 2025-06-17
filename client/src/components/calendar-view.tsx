@@ -28,6 +28,32 @@ export default function CalendarView() {
   
 
 
+  // Fetch events for the current month to show indicators
+  const { data: monthEvents = [] } = useQuery({
+    queryKey: ["/api/events", monthString],
+    queryFn: async () => {
+      const calendarDays = getCalendarDays(currentMonth);
+      const allEvents: any[] = [];
+      
+      // Fetch events for all days in the current month
+      for (const { date, isCurrentMonth } of calendarDays) {
+        if (isCurrentMonth) {
+          const dateStr = formatDate(date);
+          try {
+            const response = await fetch(`/api/events/${dateStr}`);
+            if (response.ok) {
+              const events = await response.json();
+              allEvents.push(...events);
+            }
+          } catch (error) {
+            console.error(`Failed to fetch events for ${dateStr}:`, error);
+          }
+        }
+      }
+      return allEvents;
+    },
+  });
+
   const { data: eventsForSelectedDate = [] } = useQuery({
     queryKey: ["/api/events", selectedDate ? formatDate(selectedDate) : ""],
     enabled: !!selectedDate,
@@ -114,8 +140,8 @@ export default function CalendarView() {
   };
 
   const hasEvents = (date: Date) => {
-    // This is a simplified check - in a real app you'd query events for each visible date
-    return false;
+    const dateStr = formatDate(date);
+    return monthEvents.some((event: any) => event.date === dateStr);
   };
 
   return (
