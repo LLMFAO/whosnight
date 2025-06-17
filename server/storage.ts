@@ -25,7 +25,7 @@ import {
   type InsertTeenPermissions
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like } from "drizzle-orm";
+import { eq, and, like, ne } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -372,22 +372,34 @@ export class DatabaseStorage implements IStorage {
     const pendingAssignments = await db
       .select()
       .from(calendarAssignments)
-      .where(eq(calendarAssignments.status, "pending"));
+      .where(and(
+        eq(calendarAssignments.status, "pending"),
+        ne(calendarAssignments.createdBy, userId)
+      ));
 
     const pendingEvents = await db
       .select()
       .from(events)
-      .where(eq(events.status, "pending"));
+      .where(and(
+        eq(events.status, "pending"),
+        ne(events.createdBy, userId)
+      ));
 
     const pendingTasks = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.status, "pending"));
+      .where(and(
+        eq(tasks.status, "pending"),
+        ne(tasks.createdBy, userId)
+      ));
 
     const pendingExpenses = await db
       .select()
       .from(expenses)
-      .where(eq(expenses.status, "pending"));
+      .where(and(
+        eq(expenses.status, "pending"),
+        ne(expenses.createdBy, userId)
+      ));
 
     return {
       assignments: pendingAssignments,

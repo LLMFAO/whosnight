@@ -7,6 +7,7 @@ import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
 import UserRoleSelector from "@/components/user-role-selector";
+import NotificationBadge from "@/components/notification-badge";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Bell, User } from "lucide-react";
@@ -32,7 +33,7 @@ export default function Home() {
   });
 
   const pendingCount = getPendingItemsCount(pendingItems);
-  const showUpdatesBanner = pendingCount > 0 && currentUser !== "teen";
+  const showNotificationBadge = currentUser !== "teen";
 
   const handleAcceptAll = async () => {
     try {
@@ -70,44 +71,25 @@ export default function Home() {
 
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen relative">
-      {/* User Role Selector */}
-      <UserRoleSelector
-        currentRole={currentUser}
-        onRoleChange={handleUserSwitch}
-      />
+      {/* User Role Selector with Notification Badge */}
+      <div className="flex items-center justify-between p-4 bg-background border-b">
+        <UserRoleSelector
+          currentRole={currentUser}
+          onRoleChange={handleUserSwitch}
+        />
+        
+        {showNotificationBadge && (
+          <NotificationBadge
+            pendingCount={pendingCount}
+            pendingItems={pendingItems}
+            onAcceptAll={handleAcceptAll}
+          />
+        )}
+      </div>
 
 
 
-      {/* Updates Banner */}
-      {showUpdatesBanner && (
-        <div className="bg-orange-50 border-b border-orange-100 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Bell className="h-4 w-4 text-orange-500" />
-              <span className="text-sm font-medium text-orange-700">
-                You have {pendingCount} updates to review
-              </span>
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowDetailedNotifications(true)}
-                className="text-orange-700 border-orange-300 hover:bg-orange-100"
-              >
-                Review Changes
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setShowShareModal(true)}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
-                Share Updates
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Main Content */}
       <div className="pb-20">

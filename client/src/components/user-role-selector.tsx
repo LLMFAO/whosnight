@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Settings } from "lucide-react";
 import TeenPermissionsModal from "./teen-permissions-modal";
+import NotificationBadge from "./notification-badge";
 
 interface UserRoleSelectorProps {
   currentRole: "mom" | "dad" | "teen";
