@@ -121,6 +121,8 @@ Changelog:
 - June 17, 2025. Initial setup
 - June 17, 2025. Fixed calendar color system with immediate optimistic updates and proper pending/confirmed status workflow
 - June 17, 2025. Implemented teen user role with configurable permissions system - parents can control teen access (read-only or specific modification permissions for calendar, events, tasks, and expenses)
+- June 17, 2025. Fixed approval system so changes from any user show up for appropriate parents to approve, with proper pending items logic
+- June 17, 2025. Fixed change history system by adding entity tracking (entityType and entityId) to action logs - history modals now show complete change details with current status display
 ```
 
 ## User Preferences
