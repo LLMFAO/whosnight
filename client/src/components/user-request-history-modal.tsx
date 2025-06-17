@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock, Undo2, AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar, Clock, CheckSquare, XCircle, CheckCircle, RotateCcw, User } from "lucide-react";
+import { format } from "date-fns";
 
 interface UserRequestHistoryModalProps {
   open: boolean;
@@ -31,28 +27,101 @@ interface ActionLog {
   timestamp: string;
 }
 
+// Convert technical actions to user-friendly descriptions
+const getActionDescription = (log: ActionLog) => {
+  const date = log.details.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+  const formattedDate = date ? format(new Date(date), 'MMM d') : '';
+  
+  switch (log.action) {
+    case "create_calendar_assignment":
+      if (log.details.includes("to mom")) return `Night assigned to Mom${formattedDate ? ` (${formattedDate})` : ''}`;
+      if (log.details.includes("to dad")) return `Night assigned to Dad${formattedDate ? ` (${formattedDate})` : ''}`;
+      if (log.details.includes("to teen")) return `Night assigned to Teen${formattedDate ? ` (${formattedDate})` : ''}`;
+      return `Night assigned${formattedDate ? ` (${formattedDate})` : ''}`;
+    
+    case "update_calendar_assignment":
+      if (log.details.includes("to mom")) return `Night changed to Mom${formattedDate ? ` (${formattedDate})` : ''}`;
+      if (log.details.includes("to dad")) return `Night changed to Dad${formattedDate ? ` (${formattedDate})` : ''}`;
+      if (log.details.includes("to teen")) return `Night changed to Teen${formattedDate ? ` (${formattedDate})` : ''}`;
+      return `Night changed${formattedDate ? ` (${formattedDate})` : ''}`;
+    
+    case "create_event":
+      const eventName = log.details.match(/Created event "([^"]+)"/)?.[1];
+      return `Event added${eventName ? `: ${eventName}` : ''}${formattedDate ? ` (${formattedDate})` : ''}`;
+    
+    case "update_event":
+      const updatedEventName = log.details.match(/Updated event "([^"]+)"/)?.[1];
+      return `Event updated${updatedEventName ? `: ${updatedEventName}` : ''}${formattedDate ? ` (${formattedDate})` : ''}`;
+    
+    case "cancel_event":
+      const cancelledEventName = log.details.match(/Cancelled event "([^"]+)"/)?.[1];
+      return `Event cancelled${cancelledEventName ? `: ${cancelledEventName}` : ''}${formattedDate ? ` (${formattedDate})` : ''}`;
+    
+    case "create_task":
+      const taskName = log.details.match(/Created task "([^"]+)"/)?.[1];
+      return `Task added${taskName ? `: ${taskName}` : ''}`;
+    
+    case "update_task":
+      const updatedTaskName = log.details.match(/Updated task "([^"]+)"/)?.[1];
+      return `Task updated${updatedTaskName ? `: ${updatedTaskName}` : ''}`;
+    
+    case "accept_pending_item":
+      return "Approved a change";
+    
+    case "accept_all_pending":
+      return "Approved all pending changes";
+    
+    case "undone":
+      return "Undid a previous change";
+    
+    default:
+      return log.details;
+  }
+};
+
 const getActionColor = (action: string) => {
   switch (action) {
-    case "create_calendar_assignment": return "bg-blue-100 text-blue-800";
-    case "update_calendar_assignment": return "bg-blue-100 text-blue-800";
-    case "create_event": return "bg-purple-100 text-purple-800";
-    case "update_event": return "bg-purple-100 text-purple-800";
-    case "cancel_event": return "bg-red-100 text-red-800";
-    case "create_task": return "bg-green-100 text-green-800";
-    case "update_task": return "bg-green-100 text-green-800";
-    case "accept_pending_item": return "bg-emerald-100 text-emerald-800";
-    case "accept_all_pending": return "bg-emerald-100 text-emerald-800";
-    case "undone": return "bg-orange-100 text-orange-800";
-    default: return "bg-gray-100 text-gray-800";
+    case "create_calendar_assignment":
+    case "update_calendar_assignment": 
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+    case "create_event":
+    case "update_event": 
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
+    case "cancel_event": 
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    case "create_task":
+    case "update_task": 
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    case "accept_pending_item":
+    case "accept_all_pending": 
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200";
+    case "undone": 
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+    default: 
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
   }
 };
 
 const getActionIcon = (action: string) => {
   switch (action) {
-    case "approved": return <CheckCircle className="h-4 w-4" />;
-    case "rejected": return <XCircle className="h-4 w-4" />;
-    case "undone": return <Undo2 className="h-4 w-4" />;
-    default: return <Clock className="h-4 w-4" />;
+    case "create_calendar_assignment":
+    case "update_calendar_assignment": 
+      return <Calendar className="h-4 w-4" />;
+    case "create_event":
+    case "update_event": 
+      return <Clock className="h-4 w-4" />;
+    case "cancel_event": 
+      return <XCircle className="h-4 w-4" />;
+    case "create_task":
+    case "update_task": 
+      return <CheckSquare className="h-4 w-4" />;
+    case "accept_pending_item":
+    case "accept_all_pending": 
+      return <CheckCircle className="h-4 w-4" />;
+    case "undone": 
+      return <RotateCcw className="h-4 w-4" />;
+    default: 
+      return <User className="h-4 w-4" />;
   }
 };
 
@@ -65,9 +134,6 @@ export default function UserRequestHistoryModal({
   const [undoingLogId, setUndoingLogId] = useState<number | null>(null);
 
   const currentUser = localStorage.getItem('currentUser') || 'mom';
-  
-  // Debug logging to verify user separation
-  console.log('Request History - Current User:', currentUser);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['my-requests', currentUser],
@@ -88,36 +154,34 @@ export default function UserRequestHistoryModal({
     },
     onSuccess: () => {
       toast({
-        title: "Change undone successfully",
-        description: "Your request has been reverted to its previous state."
+        title: "Change undone",
+        description: "Your action has been reversed."
       });
       queryClient.invalidateQueries({ queryKey: ['my-requests', currentUser] });
       queryClient.invalidateQueries({ queryKey: ['calendar'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['pending'] });
       setUndoingLogId(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to undo change",
-        description: error.message || "Something went wrong",
+        title: "Unable to undo",
+        description: error.message || "This change cannot be reversed.",
         variant: "destructive"
       });
       setUndoingLogId(null);
     }
   });
 
-  const handleUndo = (logId: number) => {
-    setUndoingLogId(logId);
-    undoMutation.mutate(logId);
+  const canUndo = (request: ActionLog) => {
+    return request.action !== 'undone' && 
+           !requests.some((r: ActionLog) => r.action === 'undone' && r.details.includes(request.action));
   };
 
-  const canUndo = (request: ActionLog) => {
-    return request.previousState && 
-           request.action !== 'undone' &&
-           !requests.some((r: ActionLog) => r.action === 'undone' && r.details.includes(request.action));
+  const handleUndo = async (logId: number) => {
+    setUndoingLogId(logId);
+    undoMutation.mutate(logId);
   };
 
   const getRequestStatus = (request: ActionLog) => {
@@ -125,101 +189,108 @@ export default function UserRequestHistoryModal({
       r.action === 'undone' && r.details.includes(request.action)
     );
     
-    if (hasBeenUndone) return 'undone';
-    if (request.approvedBy) return 'approved';
-    
-    // Most actions are automatically approved/completed, not pending
-    if (['create_calendar_assignment', 'update_calendar_assignment', 'create_event', 'update_event', 'create_task', 'update_task', 'cancel_event', 'accept_pending_item', 'accept_all_pending'].includes(request.action)) {
-      return 'completed';
-    }
-    
-    return 'pending';
+    if (hasBeenUndone) return "Undone";
+    if (request.approvedBy) return "Approved";
+    if (request.requestedBy && !request.approvedBy) return "Pending";
+    return "Completed";
   };
 
+  // Group requests by date
   const groupedRequests = requests.reduce((acc: any, request: ActionLog) => {
-    const status = getRequestStatus(request);
-    if (!acc[status]) acc[status] = [];
-    acc[status].push(request);
+    const date = format(new Date(request.timestamp), 'yyyy-MM-dd');
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(request);
     return acc;
   }, {});
 
+  const sortedDates = Object.keys(groupedRequests).sort((a, b) => b.localeCompare(a));
+
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Your Activity History</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading your history...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="sm:max-w-lg max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            My Request History
-          </DialogTitle>
+          <DialogTitle>Your Activity History</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            All your actions and their current status
+          </p>
         </DialogHeader>
-
-        <ScrollArea className="max-h-[60vh]">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Loading your requests...</div>
-            </div>
-          ) : requests.length === 0 ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              No requests found
+        
+        <ScrollArea className="max-h-[60vh] pr-4">
+          {requests.length === 0 ? (
+            <div className="text-center py-8">
+              <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No activity yet</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Your actions will appear here as you use the app
+              </p>
             </div>
           ) : (
             <div className="space-y-6">
-              {['pending', 'completed', 'approved', 'undone'].map(status => {
-                const statusRequests = groupedRequests[status] || [];
-                if (statusRequests.length === 0) return null;
-
-                return (
-                  <div key={status}>
-                    <h3 className="font-medium mb-3 capitalize text-sm text-muted-foreground">
-                      {status} Requests ({statusRequests.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {statusRequests.map((request: ActionLog) => (
-                        <div key={request.id} className="border rounded-lg p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                {getActionIcon(status)}
-                                <Badge className={getActionColor(request.action)}>
-                                  {request.action}
-                                </Badge>
-                                <div className="text-sm text-muted-foreground">
-                                  {new Date(request.timestamp).toLocaleString()}
-                                </div>
-                              </div>
-                              
-                              <p className="text-sm mb-2">{request.details}</p>
-                              
-                              <div className="text-xs text-muted-foreground">
-                                {request.entityType && (
-                                  <span className="capitalize">{request.entityType}</span>
-                                )}
-                                {request.entityId && (
-                                  <span> #{request.entityId}</span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {status === 'approved' && canUndo(request) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUndo(request.id)}
-                                disabled={undoingLogId === request.id}
-                                className="ml-2"
-                              >
-                                <Undo2 className="h-3 w-3 mr-1" />
-                                {undoingLogId === request.id ? 'Undoing...' : 'Undo'}
-                              </Button>
-                            )}
-                          </div>
+              {sortedDates.map((date) => (
+                <div key={date}>
+                  <h3 className="font-medium text-sm text-muted-foreground mb-3 sticky top-0 bg-background">
+                    {format(new Date(date), 'EEEE, MMMM d')}
+                  </h3>
+                  <div className="space-y-3">
+                    {groupedRequests[date].map((request: ActionLog) => (
+                      <div key={request.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                        <div className={`p-2 rounded-full ${getActionColor(request.action)}`}>
+                          {getActionIcon(request.action)}
                         </div>
-                      ))}
-                    </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-medium text-sm">
+                              {getActionDescription(request)}
+                            </p>
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {getRequestStatus(request)}
+                            </Badge>
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(request.timestamp), 'h:mm a')}
+                          </p>
+                          
+                          {canUndo(request) && (
+                            <Button
+                              variant="ghost" 
+                              size="sm"
+                              className="mt-2 h-auto p-1 text-xs hover:bg-orange-50 hover:text-orange-600"
+                              onClick={() => handleUndo(request.id)}
+                              disabled={undoingLogId === request.id}
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" />
+                              {undoingLogId === request.id ? 'Undoing...' : 'Undo'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
+                  {date !== sortedDates[sortedDates.length - 1] && <Separator className="mt-6" />}
+                </div>
+              ))}
             </div>
           )}
         </ScrollArea>
