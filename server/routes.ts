@@ -83,6 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: "update_calendar_assignment",
           details: `Updated assignment for ${validatedData.date} to ${validatedData.assignedTo}`,
           ipAddress: getClientIP(req),
+          entityType: "calendar_assignment",
+          entityId: updated.id,
         });
         
         res.json(updated);
@@ -95,6 +97,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: "create_calendar_assignment",
           details: `Assigned ${validatedData.date} to ${validatedData.assignedTo}`,
           ipAddress: getClientIP(req),
+          entityType: "calendar_assignment",
+          entityId: assignment.id,
         });
         
         res.json(assignment);
@@ -120,6 +124,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: status === "confirmed" ? "accept_calendar_assignment" : "decline_calendar_assignment",
         details: `${status === "confirmed" ? "Accepted" : "Declined"} calendar assignment for ${updated.date}`,
         ipAddress: getClientIP(req),
+        entityType: "calendar_assignment",
+        entityId: updated.id,
       });
       
       res.json(updated);
