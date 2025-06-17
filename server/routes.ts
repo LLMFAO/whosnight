@@ -384,6 +384,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Accept individual pending item
+  app.post('/api/pending/accept-item', async (req, res) => {
+    try {
+      const { itemType, itemId } = req.body;
+      const userId = (req as any).user?.id || 1; // Mock authentication
+      
+      await storage.acceptPendingItem(itemType, itemId, userId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error accepting pending item:', error);
+      res.status(500).json({ error: 'Failed to accept pending item' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

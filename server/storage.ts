@@ -21,6 +21,8 @@ import {
   type ShareLink,
   type InsertShareLink
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, like } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -73,314 +75,373 @@ export interface IStorage {
   }>;
   
   acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void>;
+  acceptPendingItem(itemType: string, itemId: number, userId: number): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private calendarAssignments: Map<number, CalendarAssignment>;
-  private events: Map<number, Event>;
-  private tasks: Map<number, Task>;
-  private expenses: Map<number, Expense>;
-  private actionLogs: Map<number, ActionLog>;
-  private shareLinks: Map<number, ShareLink>;
-  private currentId: number;
-
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.users = new Map();
-    this.calendarAssignments = new Map();
-    this.events = new Map();
-    this.tasks = new Map();
-    this.expenses = new Map();
-    this.actionLogs = new Map();
-    this.shareLinks = new Map();
-    this.currentId = 1;
-    
-    // Initialize with default users
     this.initializeDefaultData();
   }
 
   private async initializeDefaultData() {
-    await this.createUser({
-      username: "mom",
-      password: "password123",
-      name: "Sarah Johnson",
-      role: "mom"
-    });
-    
-    await this.createUser({
-      username: "dad",
-      password: "password123",
-      name: "Mike Johnson",
-      role: "dad"
-    });
+    try {
+      // Check if default users exist
+      const existingMom = await this.getUserByUsername("mom");
+      const existingDad = await this.getUserByUsername("dad");
+      
+      if (!existingMom) {
+        await this.createUser({
+          username: "mom",
+          password: "password123",
+          name: "Mom",
+          role: "mom"
+        });
+      }
+      
+      if (!existingDad) {
+        await this.createUser({
+          username: "dad",
+          password: "password123", 
+          name: "Dad",
+          role: "dad"
+        });
+      }
+    } catch (error) {
+      console.log("Database initialization error (may be expected on first run):", error);
+    }
   }
 
-  // Users
+  // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
-  // Calendar Assignments
+  // Calendar Assignment methods
   async getCalendarAssignments(month: string): Promise<CalendarAssignment[]> {
-    return Array.from(this.calendarAssignments.values()).filter(
-      assignment => assignment.date.startsWith(month)
-    );
+    return await db
+      .select()
+      .from(calendarAssignments)
+      .where(like(calendarAssignments.date, `${month}%`));
   }
 
   async getCalendarAssignment(date: string): Promise<CalendarAssignment | undefined> {
-    return Array.from(this.calendarAssignments.values()).find(
-      assignment => assignment.date === date
-    );
+    const [assignment] = await db
+      .select()
+      .from(calendarAssignments)
+      .where(eq(calendarAssignments.date, date));
+    return assignment || undefined;
   }
 
   async createCalendarAssignment(insertAssignment: InsertCalendarAssignment): Promise<CalendarAssignment> {
-    const id = this.currentId++;
-    const assignment: CalendarAssignment = {
-      ...insertAssignment,
-      id,
-      status: "pending",
-      createdAt: new Date(),
-    };
-    this.calendarAssignments.set(id, assignment);
+    const [assignment] = await db
+      .insert(calendarAssignments)
+      .values(insertAssignment)
+      .returning();
     return assignment;
   }
 
   async updateCalendarAssignment(id: number, updates: Partial<CalendarAssignment>): Promise<CalendarAssignment | undefined> {
-    const assignment = this.calendarAssignments.get(id);
-    if (!assignment) return undefined;
-    
-    const updated = { ...assignment, ...updates };
-    this.calendarAssignments.set(id, updated);
-    return updated;
+    const [assignment] = await db
+      .update(calendarAssignments)
+      .set(updates)
+      .where(eq(calendarAssignments.id, id))
+      .returning();
+    return assignment || undefined;
   }
 
   async deleteCalendarAssignment(id: number): Promise<boolean> {
-    return this.calendarAssignments.delete(id);
+    const result = await db
+      .delete(calendarAssignments)
+      .where(eq(calendarAssignments.id, id));
+    return result.rowCount > 0;
   }
 
-  // Events
+  // Event methods
   async getEvents(date: string): Promise<Event[]> {
-    return Array.from(this.events.values()).filter(
-      event => event.date === date
-    );
+    return await db
+      .select()
+      .from(events)
+      .where(eq(events.date, date));
   }
 
   async getEvent(id: number): Promise<Event | undefined> {
-    return this.events.get(id);
+    const [event] = await db
+      .select()
+      .from(events)
+      .where(eq(events.id, id));
+    return event || undefined;
   }
 
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    const id = this.currentId++;
-    const event: Event = {
-      ...insertEvent,
-      id,
-      status: "pending",
-      createdAt: new Date(),
-    };
-    this.events.set(id, event);
+    const [event] = await db
+      .insert(events)
+      .values(insertEvent)
+      .returning();
     return event;
   }
 
   async updateEvent(id: number, updates: Partial<Event>): Promise<Event | undefined> {
-    const event = this.events.get(id);
-    if (!event) return undefined;
-    
-    const updated = { ...event, ...updates };
-    this.events.set(id, updated);
-    return updated;
+    const [event] = await db
+      .update(events)
+      .set(updates)
+      .where(eq(events.id, id))
+      .returning();
+    return event || undefined;
   }
 
   async deleteEvent(id: number): Promise<boolean> {
-    return this.events.delete(id);
+    const result = await db
+      .delete(events)
+      .where(eq(events.id, id));
+    return result.rowCount > 0;
   }
 
-  // Tasks
+  // Task methods
   async getTasks(): Promise<Task[]> {
-    return Array.from(this.tasks.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return await db
+      .select()
+      .from(tasks);
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasks.get(id);
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, id));
+    return task || undefined;
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const id = this.currentId++;
-    const task: Task = {
-      ...insertTask,
-      id,
-      completed: false,
-      status: "pending",
-      createdAt: new Date(),
-    };
-    this.tasks.set(id, task);
+    const [task] = await db
+      .insert(tasks)
+      .values(insertTask)
+      .returning();
     return task;
   }
 
   async updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined> {
-    const task = this.tasks.get(id);
-    if (!task) return undefined;
-    
-    const updated = { ...task, ...updates };
-    this.tasks.set(id, updated);
-    return updated;
+    const [task] = await db
+      .update(tasks)
+      .set(updates)
+      .where(eq(tasks.id, id))
+      .returning();
+    return task || undefined;
   }
 
   async deleteTask(id: number): Promise<boolean> {
-    return this.tasks.delete(id);
+    const result = await db
+      .delete(tasks)
+      .where(eq(tasks.id, id));
+    return result.rowCount > 0;
   }
 
-  // Expenses
+  // Expense methods
   async getExpenses(month?: string): Promise<Expense[]> {
-    const allExpenses = Array.from(this.expenses.values());
     if (month) {
-      return allExpenses.filter(expense => expense.date.startsWith(month));
+      return await db
+        .select()
+        .from(expenses)
+        .where(like(expenses.date, `${month}%`));
     }
-    return allExpenses.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return await db
+      .select()
+      .from(expenses);
   }
 
   async getExpense(id: number): Promise<Expense | undefined> {
-    return this.expenses.get(id);
+    const [expense] = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.id, id));
+    return expense || undefined;
   }
 
   async createExpense(insertExpense: InsertExpense): Promise<Expense> {
-    const id = this.currentId++;
-    const expense: Expense = {
-      ...insertExpense,
-      id,
-      hasReceipt: false,
-      status: "pending",
-      createdAt: new Date(),
-    };
-    this.expenses.set(id, expense);
+    const [expense] = await db
+      .insert(expenses)
+      .values(insertExpense)
+      .returning();
     return expense;
   }
 
   async updateExpense(id: number, updates: Partial<Expense>): Promise<Expense | undefined> {
-    const expense = this.expenses.get(id);
-    if (!expense) return undefined;
-    
-    const updated = { ...expense, ...updates };
-    this.expenses.set(id, updated);
-    return updated;
+    const [expense] = await db
+      .update(expenses)
+      .set(updates)
+      .where(eq(expenses.id, id))
+      .returning();
+    return expense || undefined;
   }
 
   async deleteExpense(id: number): Promise<boolean> {
-    return this.expenses.delete(id);
+    const result = await db
+      .delete(expenses)
+      .where(eq(expenses.id, id));
+    return result.rowCount > 0;
   }
 
-  // Action Logs
+  // Action Log methods
   async createActionLog(insertLog: InsertActionLog): Promise<ActionLog> {
-    const id = this.currentId++;
-    const log: ActionLog = {
-      ...insertLog,
-      id,
-      timestamp: new Date(),
-    };
-    this.actionLogs.set(id, log);
+    const [log] = await db
+      .insert(actionLogs)
+      .values(insertLog)
+      .returning();
     return log;
   }
 
   async getActionLogs(userId?: number): Promise<ActionLog[]> {
-    const logs = Array.from(this.actionLogs.values());
     if (userId) {
-      return logs.filter(log => log.userId === userId);
+      return await db
+        .select()
+        .from(actionLogs)
+        .where(eq(actionLogs.userId, userId));
     }
-    return logs.sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    return await db
+      .select()
+      .from(actionLogs);
   }
 
-  // Share Links
+  // Share Link methods
   async createShareLink(insertShareLink: InsertShareLink): Promise<ShareLink> {
-    const id = this.currentId++;
-    const shareLink: ShareLink = {
-      ...insertShareLink,
-      id,
-      createdAt: new Date(),
-    };
-    this.shareLinks.set(id, shareLink);
+    const [shareLink] = await db
+      .insert(shareLinks)
+      .values(insertShareLink)
+      .returning();
     return shareLink;
   }
 
   async getShareLink(linkId: string): Promise<ShareLink | undefined> {
-    return Array.from(this.shareLinks.values()).find(
-      link => link.linkId === linkId && new Date() < new Date(link.expiresAt)
-    );
+    const [shareLink] = await db
+      .select()
+      .from(shareLinks)
+      .where(eq(shareLinks.linkId, linkId));
+    return shareLink || undefined;
   }
 
-  // Bulk Operations
+  // Bulk operations
   async getPendingItems(userId: number): Promise<{
     assignments: CalendarAssignment[];
     events: Event[];
     tasks: Task[];
     expenses: Expense[];
   }> {
+    const pendingAssignments = await db
+      .select()
+      .from(calendarAssignments)
+      .where(eq(calendarAssignments.status, "pending"));
+
+    const pendingEvents = await db
+      .select()
+      .from(events)
+      .where(eq(events.status, "pending"));
+
+    const pendingTasks = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.status, "pending"));
+
+    const pendingExpenses = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.status, "pending"));
+
     return {
-      assignments: Array.from(this.calendarAssignments.values()).filter(
-        item => item.status === "pending"
-      ),
-      events: Array.from(this.events.values()).filter(
-        item => item.status === "pending"
-      ),
-      tasks: Array.from(this.tasks.values()).filter(
-        item => item.status === "pending"
-      ),
-      expenses: Array.from(this.expenses.values()).filter(
-        item => item.status === "pending"
-      ),
+      assignments: pendingAssignments,
+      events: pendingEvents,
+      tasks: pendingTasks,
+      expenses: pendingExpenses
     };
   }
 
   async acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void> {
-    if (itemTypes.includes("assignments")) {
-      for (const [id, assignment] of this.calendarAssignments.entries()) {
-        if (assignment.status === "pending") {
-          this.calendarAssignments.set(id, { ...assignment, status: "confirmed" });
-        }
+    for (const itemType of itemTypes) {
+      switch (itemType) {
+        case "assignments":
+          await db
+            .update(calendarAssignments)
+            .set({ status: "confirmed" })
+            .where(eq(calendarAssignments.status, "pending"));
+          break;
+        case "events":
+          await db
+            .update(events)
+            .set({ status: "confirmed" })
+            .where(eq(events.status, "pending"));
+          break;
+        case "tasks":
+          await db
+            .update(tasks)
+            .set({ status: "confirmed" })
+            .where(eq(tasks.status, "pending"));
+          break;
+        case "expenses":
+          await db
+            .update(expenses)
+            .set({ status: "confirmed" })
+            .where(eq(expenses.status, "pending"));
+          break;
       }
     }
-    
-    if (itemTypes.includes("events")) {
-      for (const [id, event] of this.events.entries()) {
-        if (event.status === "pending") {
-          this.events.set(id, { ...event, status: "confirmed" });
-        }
-      }
+
+    // Log the action
+    await this.createActionLog({
+      userId,
+      action: "accept_all_pending",
+      details: `Accepted all pending items: ${itemTypes.join(", ")}`,
+      ipAddress: null
+    });
+  }
+
+  async acceptPendingItem(itemType: string, itemId: number, userId: number): Promise<void> {
+    switch (itemType) {
+      case "assignment":
+        await db
+          .update(calendarAssignments)
+          .set({ status: "confirmed" })
+          .where(eq(calendarAssignments.id, itemId));
+        break;
+      case "event":
+        await db
+          .update(events)
+          .set({ status: "confirmed" })
+          .where(eq(events.id, itemId));
+        break;
+      case "task":
+        await db
+          .update(tasks)
+          .set({ status: "confirmed" })
+          .where(eq(tasks.id, itemId));
+        break;
+      case "expense":
+        await db
+          .update(expenses)
+          .set({ status: "confirmed" })
+          .where(eq(expenses.id, itemId));
+        break;
     }
-    
-    if (itemTypes.includes("tasks")) {
-      for (const [id, task] of this.tasks.entries()) {
-        if (task.status === "pending") {
-          this.tasks.set(id, { ...task, status: "confirmed" });
-        }
-      }
-    }
-    
-    if (itemTypes.includes("expenses")) {
-      for (const [id, expense] of this.expenses.entries()) {
-        if (expense.status === "pending") {
-          this.expenses.set(id, { ...expense, status: "confirmed" });
-        }
-      }
-    }
+
+    // Log the action
+    await this.createActionLog({
+      userId,
+      action: "accept_pending_item",
+      details: `Accepted ${itemType} with ID ${itemId}`,
+      ipAddress: null
+    });
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
