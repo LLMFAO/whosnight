@@ -6,6 +6,7 @@ import {
   expenses, 
   actionLogs, 
   shareLinks,
+  teenPermissions,
   type User, 
   type InsertUser,
   type CalendarAssignment,
@@ -19,7 +20,9 @@ import {
   type ActionLog,
   type InsertActionLog,
   type ShareLink,
-  type InsertShareLink
+  type InsertShareLink,
+  type TeenPermissions,
+  type InsertTeenPermissions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like } from "drizzle-orm";

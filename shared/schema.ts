@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  role: text("role").notNull(), // "mom" or "dad"
+  role: text("role").notNull(), // "mom", "dad", or "teen"
 });
 
 export const calendarAssignments = pgTable("calendar_assignments", {
@@ -76,6 +76,18 @@ export const shareLinks = pgTable("share_links", {
   expiresAt: timestamp("expires_at").notNull(),
 });
 
+export const teenPermissions = pgTable("teen_permissions", {
+  id: serial("id").primaryKey(),
+  teenUserId: integer("teen_user_id").notNull(),
+  canModifyAssignments: boolean("can_modify_assignments").default(false),
+  canAddEvents: boolean("can_add_events").default(false),
+  canAddTasks: boolean("can_add_tasks").default(false),
+  canAddExpenses: boolean("can_add_expenses").default(false),
+  isReadOnly: boolean("is_read_only").default(true),
+  modifiedBy: integer("modified_by").notNull(), // parent who set permissions
+  modifiedAt: timestamp("modified_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -117,6 +129,11 @@ export const insertShareLinkSchema = createInsertSchema(shareLinks).omit({
   createdAt: true,
 });
 
+export const insertTeenPermissionsSchema = createInsertSchema(teenPermissions).omit({
+  id: true,
+  modifiedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -138,3 +155,6 @@ export type InsertActionLog = z.infer<typeof insertActionLogSchema>;
 
 export type ShareLink = typeof shareLinks.$inferSelect;
 export type InsertShareLink = z.infer<typeof insertShareLinkSchema>;
+
+export type TeenPermissions = typeof teenPermissions.$inferSelect;
+export type InsertTeenPermissions = z.infer<typeof insertTeenPermissionsSchema>;
