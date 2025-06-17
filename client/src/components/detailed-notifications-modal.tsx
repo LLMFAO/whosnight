@@ -17,7 +17,6 @@ interface DetailedNotificationsModalProps {
     assignments: any[];
     events: any[];
     tasks: any[];
-    expenses: any[];
   };
 }
 
@@ -89,7 +88,6 @@ export default function DetailedNotificationsModal({
       if (pendingItems.assignments.length > 0) itemTypes.push("assignments");
       if (pendingItems.events.length > 0) itemTypes.push("events");
       if (pendingItems.tasks.length > 0) itemTypes.push("tasks");
-      if (pendingItems.expenses.length > 0) itemTypes.push("expenses");
 
       const response = await fetch(`/api/pending/accept-all`, {
         method: "POST",

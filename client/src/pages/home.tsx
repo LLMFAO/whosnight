@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CalendarView from "@/components/calendar-view";
 import TodoView from "@/components/todo-view";
-import ExpensesView from "@/components/expenses-view";
+
 import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
@@ -13,7 +13,7 @@ import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Bell, User, History } from "lucide-react";
 
-type ViewType = "calendar" | "todo" | "expenses";
+type ViewType = "calendar" | "todo";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");
@@ -44,7 +44,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          itemTypes: ["assignments", "events", "tasks", "expenses"]
+          itemTypes: ["assignments", "events", "tasks"]
         }),
       });
 
@@ -108,7 +108,6 @@ export default function Home() {
       <div className="pb-20">
         {currentView === "calendar" && <CalendarView />}
         {currentView === "todo" && <TodoView />}
-        {currentView === "expenses" && <ExpensesView />}
       </div>
 
       {/* Bottom Navigation */}
