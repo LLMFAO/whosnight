@@ -30,6 +30,8 @@ export default function CalendarView() {
       return await apiRequest("POST", "/api/calendar/assignments", data);
     },
     onSuccess: () => {
+      // Invalidate both the specific month and pending queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments", monthString] });
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
       setShowAssignmentSheet(false);

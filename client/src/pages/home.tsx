@@ -37,11 +37,12 @@ export default function Home() {
       });
 
       if (response.ok) {
-        // Invalidate all relevant queries
+        // Invalidate all relevant queries to refresh data
         queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/calendar"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
         queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
         queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       }
     } catch (error) {
       console.error("Failed to accept all items:", error);
