@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Custom colors for co-parent app */
+  --mom-primary: hsl(0, 73%, 57%);
+  --mom-light: hsl(0, 73%, 77%);
+  --dad-primary: hsl(221, 83%, 53%);
+  --dad-light: hsl(221, 83%, 73%);
+  --neutral-bg: hsl(210, 40%, 98%);
+  --dark-text: hsl(222, 47%, 11%);
+  --muted-text: hsl(215, 13%, 34%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom styles for mobile touch targets */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* Calendar day styles */
+.calendar-day {
+  transition: all 0.2s ease;
+}
+
+.calendar-day:active {
+  transform: scale(0.95);
+}
+
+/* Mom's assigned days */
+.mom-day {
+  background-color: var(--mom-primary);
+  color: white;
+}
+
+.mom-day-pending {
+  background-color: var(--mom-light);
+  color: var(--dark-text);
+  border: 2px dashed var(--mom-primary);
+}
+
+/* Dad's assigned days */
+.dad-day {
+  background-color: var(--dad-primary);
+  color: white;
+}
+
+.dad-day-pending {
+  background-color: var(--dad-light);
+  color: var(--dark-text);
+  border: 2px dashed var(--dad-primary);
+}
+
+/* Unassigned days */
+.unassigned-day {
+  background-color: white;
+  border: 1px solid hsl(20, 5.9%, 90%);
+  color: var(--dark-text);
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(100%); 
+  }
+  to { 
+    transform: translateY(0); 
+  }
+}
+
+/* Bottom sheet styles */
+.bottom-sheet-open {
+  transform: translateY(0);
+}
+
+.bottom-sheet-closed {
+  transform: translateY(100%);
+}
+
+/* Pending item styles */
+.pending-border {
+  border: 2px dashed;
+}
+
+.pending-assignment {
+  @apply pending-border border-blue-400;
+}
+
+.pending-task {
+  @apply pending-border border-orange-400;
+}
+
+.pending-expense {
+  @apply pending-border border-green-400;
+}

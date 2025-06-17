@@ -1,0 +1,228 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { User, X, Plus, MapPin, Clock, Edit } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatDate } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+
+interface DateAssignmentSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedDate: Date | null;
+  events: any[];
+  onAssignment: (assignedTo: string | null) => void;
+  isLoading: boolean;
+}
+
+export default function DateAssignmentSheet({
+  open,
+  onOpenChange,
+  selectedDate,
+  events,
+  onAssignment,
+  isLoading,
+}: DateAssignmentSheetProps) {
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [eventForm, setEventForm] = useState({
+    name: "",
+    time: "",
+    location: "",
+    description: "",
+    children: [] as string[],
+  });
+  const queryClient = useQueryClient();
+
+  const eventMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("POST", "/api/events", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      setShowEventForm(false);
+      setEventForm({ name: "", time: "", location: "", description: "", children: [] });
+    },
+  });
+
+  const handleEventSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDate || !eventForm.name.trim()) return;
+
+    eventMutation.mutate({
+      ...eventForm,
+      date: formatDate(selectedDate),
+    });
+  };
+
+  if (!selectedDate) return null;
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
+          <SheetHeader className="text-center pb-4">
+            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+            <SheetTitle className="text-lg font-semibold">
+              {format(selectedDate, "MMMM d, yyyy")}
+            </SheetTitle>
+            <p className="text-sm text-gray-500">Assign custody or add event</p>
+          </SheetHeader>
+
+          <div className="space-y-3 mb-6">
+            <Button
+              className="w-full h-12 text-white font-medium"
+              style={{ backgroundColor: "var(--mom-primary)" }}
+              onClick={() => onAssignment("mom")}
+              disabled={isLoading}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Assign to Mom
+            </Button>
+            <Button
+              className="w-full h-12 text-white font-medium"
+              style={{ backgroundColor: "var(--dad-primary)" }}
+              onClick={() => onAssignment("dad")}
+              disabled={isLoading}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Assign to Dad
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-12 font-medium"
+              onClick={() => onAssignment(null)}
+              disabled={isLoading}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Clear Assignment
+            </Button>
+            <Button
+              variant="secondary"
+              className="w-full h-12 font-medium"
+              onClick={() => setShowEventForm(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Event
+            </Button>
+          </div>
+
+          {/* Events for selected date */}
+          {events.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Events on this date</h4>
+              <div className="space-y-2">
+                {events.map((event: any) => (
+                  <div
+                    key={event.id}
+                    className={`border rounded-lg p-3 ${
+                      event.status === "pending" 
+                        ? "bg-blue-50 border-blue-200 border-dashed" 
+                        : "bg-white border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="text-sm font-medium text-blue-900">
+                          {event.name}
+                        </h5>
+                        <div className="flex items-center space-x-2 text-xs text-blue-700 mt-1">
+                          {event.time && (
+                            <div className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {event.time}
+                            </div>
+                          )}
+                          {event.location && (
+                            <div className="flex items-center">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {event.location}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="ghost">
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Event Creation Modal */}
+      <Dialog open={showEventForm} onOpenChange={setShowEventForm}>
+        <DialogContent className="max-w-sm mx-4">
+          <DialogHeader>
+            <DialogTitle>Add Event</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEventSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="event-name">Event Name *</Label>
+              <Input
+                id="event-name"
+                value={eventForm.name}
+                onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
+                placeholder="e.g., Soccer practice"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-time">Time</Label>
+              <Input
+                id="event-time"
+                type="time"
+                value={eventForm.time}
+                onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-location">Location</Label>
+              <Input
+                id="event-location"
+                value={eventForm.location}
+                onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                placeholder="e.g., Riverside Park"
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-description">Description</Label>
+              <Textarea
+                id="event-description"
+                value={eventForm.description}
+                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                placeholder="Additional details..."
+                rows={3}
+              />
+            </div>
+            <div className="flex space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEventForm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={eventMutation.isPending || !eventForm.name.trim()}
+                className="flex-1"
+              >
+                {eventMutation.isPending ? "Adding..." : "Add Event"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
