@@ -21,8 +21,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mock authentication middleware (in production, use proper auth)
   const mockAuth = (req: any, res: any, next: any) => {
-    // For demo purposes, we'll use the first user as logged in
-    req.user = { id: 1, username: "mom", role: "mom" };
+    // For demo purposes, alternate between users to show pending functionality
+    // In a real app, this would be based on actual session/auth
+    const userParam = req.query.user || req.headers['x-user'] || 'mom';
+    if (userParam === 'dad') {
+      req.user = { id: 2, username: "dad", role: "dad" };
+    } else {
+      req.user = { id: 1, username: "mom", role: "mom" };
+    }
     next();
   };
 

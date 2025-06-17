@@ -7,13 +7,14 @@ import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
+import { Bell, User } from "lucide-react";
 
 type ViewType = "calendar" | "todo" | "expenses";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<"mom" | "dad">("mom");
   const queryClient = useQueryClient();
 
   const { data: pendingItems } = useQuery({
@@ -47,8 +48,39 @@ export default function Home() {
     }
   };
 
+  const handleUserSwitch = (user: "mom" | "dad") => {
+    setCurrentUser(user);
+    // Clear cache to refetch data for new user
+    queryClient.clear();
+  };
+
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen relative">
+      {/* User Switcher for Demo */}
+      <div className="bg-gray-100 border-b border-gray-200 p-2">
+        <div className="flex items-center justify-center space-x-2">
+          <span className="text-xs text-gray-600">Demo Mode:</span>
+          <Button
+            size="sm"
+            variant={currentUser === "mom" ? "default" : "outline"}
+            onClick={() => handleUserSwitch("mom")}
+            className="h-7 px-3 text-xs"
+            style={currentUser === "mom" ? { backgroundColor: "var(--mom-primary)" } : {}}
+          >
+            View as Mom
+          </Button>
+          <Button
+            size="sm"
+            variant={currentUser === "dad" ? "default" : "outline"}
+            onClick={() => handleUserSwitch("dad")}
+            className="h-7 px-3 text-xs"
+            style={currentUser === "dad" ? { backgroundColor: "var(--dad-primary)" } : {}}
+          >
+            View as Dad
+          </Button>
+        </div>
+      </div>
+
       {/* Updates Banner */}
       {showUpdatesBanner && (
         <div className="bg-orange-50 border-b border-orange-100 p-4">

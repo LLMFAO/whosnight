@@ -334,16 +334,16 @@ export class MemStorage implements IStorage {
   }> {
     return {
       assignments: Array.from(this.calendarAssignments.values()).filter(
-        item => item.createdBy !== userId && item.status === "pending"
+        item => item.status === "pending"
       ),
       events: Array.from(this.events.values()).filter(
-        item => item.createdBy !== userId && item.status === "pending"
+        item => item.status === "pending"
       ),
       tasks: Array.from(this.tasks.values()).filter(
-        item => item.createdBy !== userId && item.status === "pending"
+        item => item.status === "pending"
       ),
       expenses: Array.from(this.expenses.values()).filter(
-        item => item.createdBy !== userId && item.status === "pending"
+        item => item.status === "pending"
       ),
     };
   }
@@ -351,7 +351,7 @@ export class MemStorage implements IStorage {
   async acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void> {
     if (itemTypes.includes("assignments")) {
       for (const [id, assignment] of this.calendarAssignments.entries()) {
-        if (assignment.createdBy !== userId && assignment.status === "pending") {
+        if (assignment.status === "pending") {
           this.calendarAssignments.set(id, { ...assignment, status: "confirmed" });
         }
       }
@@ -359,7 +359,7 @@ export class MemStorage implements IStorage {
     
     if (itemTypes.includes("events")) {
       for (const [id, event] of this.events.entries()) {
-        if (event.createdBy !== userId && event.status === "pending") {
+        if (event.status === "pending") {
           this.events.set(id, { ...event, status: "confirmed" });
         }
       }
@@ -367,7 +367,7 @@ export class MemStorage implements IStorage {
     
     if (itemTypes.includes("tasks")) {
       for (const [id, task] of this.tasks.entries()) {
-        if (task.createdBy !== userId && task.status === "pending") {
+        if (task.status === "pending") {
           this.tasks.set(id, { ...task, status: "confirmed" });
         }
       }
@@ -375,7 +375,7 @@ export class MemStorage implements IStorage {
     
     if (itemTypes.includes("expenses")) {
       for (const [id, expense] of this.expenses.entries()) {
-        if (expense.createdBy !== userId && expense.status === "pending") {
+        if (expense.status === "pending") {
           this.expenses.set(id, { ...expense, status: "confirmed" });
         }
       }

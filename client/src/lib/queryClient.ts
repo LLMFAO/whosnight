@@ -11,10 +11,18 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  userOverride?: string,
 ): Promise<Response> {
+  const headers: any = data ? { "Content-Type": "application/json" } : {};
+  
+  // Add user override header if provided
+  if (userOverride) {
+    headers["x-user"] = userOverride;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
