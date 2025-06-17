@@ -7,7 +7,8 @@ import {
   insertTaskSchema,
   insertExpenseSchema,
   insertActionLogSchema,
-  insertShareLinkSchema
+  insertShareLinkSchema,
+  insertTeenPermissionsSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { nanoid } from "nanoid";
@@ -26,6 +27,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userParam = req.query.user || req.headers['x-user'] || 'mom';
     if (userParam === 'dad') {
       req.user = { id: 2, username: "dad", role: "dad" };
+    } else if (userParam === 'teen') {
+      req.user = { id: 3, username: "teen", role: "teen" };
     } else {
       req.user = { id: 1, username: "mom", role: "mom" };
     }
@@ -396,6 +399,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error accepting pending item:', error);
       res.status(500).json({ error: 'Failed to accept pending item' });
+    }
+  });
+
+  // Accept all pending items
+  app.post('/api/pending/accept-all', async (req, res) => {
+    try {
+      const { itemTypes } = req.body;
+      const userId = (req as any).user?.id || 1; // Mock authentication
+      
+      await storage.acceptAllPendingItems(userId, itemTypes);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error accepting all pending items:', error);
+      res.status(500).json({ success: false, message: 'Failed to accept pending items' });
+    }
+  });
+
+  // Teen permissions routes
+  app.get("/api/teen-permissions/:teenUserId", mockAuth, async (req, res) => {
+    try {
+      const teenUserId = parseInt(req.params.teenUserId);
+      const permissions = await storage.getTeenPermissions(teenUserId);
+      
+      if (!permissions) {
+        // Create default read-only permissions for new teen
+        const defaultPermissions = await storage.createTeenPermissions({
+          teenUserId,
+          canModifyAssignments: false,
+          canAddEvents: false,
+          canAddTasks: false,
+          canAddExpenses: false,
+          isReadOnly: true,
+          modifiedBy: req.user.id
+        });
+        return res.json(defaultPermissions);
+      }
+      
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get teen permissions" });
+    }
+  });
+
+  app.post("/api/teen-permissions", mockAuth, async (req, res) => {
+    try {
+      // Only parents can create/modify teen permissions
+      if (req.user.role === "teen") {
+        return res.status(403).json({ message: "Teens cannot modify their own permissions" });
+      }
+
+      const validatedData = insertTeenPermissionsSchema.parse({
+        ...req.body,
+        modifiedBy: req.user.id
+      });
+
+      const permissions = await storage.createTeenPermissions(validatedData);
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create teen permissions" });
+    }
+  });
+
+  app.put("/api/teen-permissions/:teenUserId", mockAuth, async (req, res) => {
+    try {
+      const teenUserId = parseInt(req.params.teenUserId);
+      
+      // Only parents can modify teen permissions
+      if (req.user.role === "teen") {
+        return res.status(403).json({ message: "Teens cannot modify their own permissions" });
+      }
+
+      const permissions = await storage.updateTeenPermissions(
+        teenUserId, 
+        req.body, 
+        req.user.id
+      );
+      
+      if (!permissions) {
+        return res.status(404).json({ message: "Teen permissions not found" });
+      }
+
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update teen permissions" });
     }
   });
 

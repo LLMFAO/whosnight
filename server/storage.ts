@@ -79,6 +79,12 @@ export interface IStorage {
   
   acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void>;
   acceptPendingItem(itemType: string, itemId: number, userId: number): Promise<void>;
+  
+  // Teen Permissions
+  getTeenPermissions(teenUserId: number): Promise<TeenPermissions | undefined>;
+  createTeenPermissions(permissions: InsertTeenPermissions): Promise<TeenPermissions>;
+  updateTeenPermissions(teenUserId: number, updates: Partial<TeenPermissions>, modifiedBy: number): Promise<TeenPermissions | undefined>;
+  isTeenAllowed(teenUserId: number, action: 'modifyAssignments' | 'addEvents' | 'addTasks' | 'addExpenses'): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -444,6 +450,56 @@ export class DatabaseStorage implements IStorage {
       details: `Accepted ${itemType} with ID ${itemId}`,
       ipAddress: null
     });
+  }
+
+  async getTeenPermissions(teenUserId: number): Promise<TeenPermissions | undefined> {
+    const [permissions] = await db
+      .select()
+      .from(teenPermissions)
+      .where(eq(teenPermissions.teenUserId, teenUserId));
+    return permissions || undefined;
+  }
+
+  async createTeenPermissions(insertPermissions: InsertTeenPermissions): Promise<TeenPermissions> {
+    const [permissions] = await db
+      .insert(teenPermissions)
+      .values(insertPermissions)
+      .returning();
+    return permissions;
+  }
+
+  async updateTeenPermissions(teenUserId: number, updates: Partial<TeenPermissions>, modifiedBy: number): Promise<TeenPermissions | undefined> {
+    const [permissions] = await db
+      .update(teenPermissions)
+      .set({
+        ...updates,
+        modifiedBy,
+        modifiedAt: new Date()
+      })
+      .where(eq(teenPermissions.teenUserId, teenUserId))
+      .returning();
+    return permissions || undefined;
+  }
+
+  async isTeenAllowed(teenUserId: number, action: 'modifyAssignments' | 'addEvents' | 'addTasks' | 'addExpenses'): Promise<boolean> {
+    const permissions = await this.getTeenPermissions(teenUserId);
+    if (!permissions) return false;
+    
+    // If read-only mode is enabled, deny all modifications
+    if (permissions.isReadOnly) return false;
+    
+    switch (action) {
+      case 'modifyAssignments':
+        return permissions.canModifyAssignments ?? false;
+      case 'addEvents':
+        return permissions.canAddEvents ?? false;
+      case 'addTasks':
+        return permissions.canAddTasks ?? false;
+      case 'addExpenses':
+        return permissions.canAddExpenses ?? false;
+      default:
+        return false;
+    }
   }
 }
 
