@@ -33,10 +33,15 @@ interface ActionLog {
 
 const getActionColor = (action: string) => {
   switch (action) {
-    case "created": return "bg-green-100 text-green-800";
-    case "updated": return "bg-blue-100 text-blue-800";  
-    case "approved": return "bg-emerald-100 text-emerald-800";
-    case "rejected": return "bg-red-100 text-red-800";
+    case "create_calendar_assignment": return "bg-blue-100 text-blue-800";
+    case "update_calendar_assignment": return "bg-blue-100 text-blue-800";
+    case "create_event": return "bg-purple-100 text-purple-800";
+    case "update_event": return "bg-purple-100 text-purple-800";
+    case "cancel_event": return "bg-red-100 text-red-800";
+    case "create_task": return "bg-green-100 text-green-800";
+    case "update_task": return "bg-green-100 text-green-800";
+    case "accept_pending_item": return "bg-emerald-100 text-emerald-800";
+    case "accept_all_pending": return "bg-emerald-100 text-emerald-800";
     case "undone": return "bg-orange-100 text-orange-800";
     default: return "bg-gray-100 text-gray-800";
   }
@@ -60,6 +65,9 @@ export default function UserRequestHistoryModal({
   const [undoingLogId, setUndoingLogId] = useState<number | null>(null);
 
   const currentUser = localStorage.getItem('currentUser') || 'mom';
+  
+  // Debug logging to verify user separation
+  console.log('Request History - Current User:', currentUser);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['my-requests', currentUser],
