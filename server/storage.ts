@@ -25,7 +25,7 @@ import {
   type InsertTeenPermissions
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like, ne, or } from "drizzle-orm";
+import { eq, and, like, ne, or, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -373,8 +373,11 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(actionLogs)
-      .where(eq(actionLogs.requestedBy, userId))
-      .orderBy(actionLogs.timestamp);
+      .where(or(
+        eq(actionLogs.requestedBy, userId),
+        eq(actionLogs.userId, userId)
+      ))
+      .orderBy(desc(actionLogs.timestamp));
   }
 
   // Share Link methods
