@@ -136,19 +136,20 @@ export default function ChangeHistoryModal({
            !logs.some((l: ActionLog) => l.action === 'undone' && l.details.includes(log.action));
   };
 
-  const getActionColor = (action: string) => {
+  const getActionDisplay = (action: string) => {
     switch (action) {
       case 'create_calendar_assignment':
+        return { label: 'Night assigned', color: 'bg-blue-100 text-blue-800' };
       case 'update_calendar_assignment':
-        return 'bg-blue-100 text-blue-800';
+        return { label: 'Night changed', color: 'bg-blue-100 text-blue-800' };
       case 'accept_calendar_assignment':
-        return 'bg-green-100 text-green-800';
+        return { label: 'Approved', color: 'bg-green-100 text-green-800' };
       case 'decline_calendar_assignment':
-        return 'bg-red-100 text-red-800';
+        return { label: 'Declined', color: 'bg-red-100 text-red-800' };
       case 'undone':
-        return 'bg-gray-100 text-gray-800';
+        return { label: 'Undone', color: 'bg-gray-100 text-gray-800' };
       default:
-        return 'bg-gray-100 text-gray-800';
+        return { label: 'Updated', color: 'bg-gray-100 text-gray-800' };
     }
   };
 
@@ -213,20 +214,25 @@ export default function ChangeHistoryModal({
             </div>
           ) : (
             <div className="space-y-4">
-              {logs.map((log: ActionLog) => (
+              {logs.map((log: ActionLog) => {
+                const actionDisplay = getActionDisplay(log.action);
+                const logDate = new Date(log.timestamp);
+                const timeAgo = logDate.toLocaleDateString() + ' at ' + logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                return (
                 <div key={log.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge className={getActionColor(log.action)}>
-                          {log.action}
+                        <Badge className={actionDisplay.color}>
+                          {actionDisplay.label}
                         </Badge>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <User className="h-3 w-3" />
                           {getUserName(log.userId)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {new Date(log.timestamp).toLocaleString()}
+                          {timeAgo}
                         </div>
                       </div>
                       
@@ -259,7 +265,8 @@ export default function ChangeHistoryModal({
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>

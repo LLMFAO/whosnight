@@ -207,7 +207,7 @@ export default function CalendarView() {
             >
               {format(date, "d")}
               {hasEvents(date) && isCurrentMonth && (
-                <div className="absolute top-1 right-1 w-2 h-2 bg-blue-400 rounded-full" />
+                <div className="absolute top-1 right-1 w-2 h-2 bg-white border border-gray-400 rounded-full shadow-sm" />
               )}
             </button>
           ))}
