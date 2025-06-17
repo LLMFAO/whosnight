@@ -195,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/events/:id", mockAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const { reason } = req.body;
       const event = await storage.getEvent(parseInt(id));
       
       if (!event) {
@@ -210,13 +211,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      // Log the action
+      // Log the action with the cancellation reason
       await storage.createActionLog({
         userId: req.user.id,
         action: "cancel_event",
         entityType: "event",
         entityId: parseInt(id),
-        details: `Cancelled event "${event.name}"`,
+        details: `Requested cancellation of event "${event.name}"${reason ? `: ${reason}` : ''}`,
         ipAddress: getClientIP(req),
       });
       

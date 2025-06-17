@@ -191,14 +191,23 @@ export default function DetailedNotificationsModal({
                   Events ({pendingItems.events.length})
                 </CardTitle>
                 <CardDescription>
-                  Scheduled activities awaiting confirmation
+                  Event changes awaiting confirmation
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingItems.events.map((event: any) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={event.id} className={`flex items-center justify-between p-3 border rounded-lg ${
+                    event.status === 'cancelled' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+                  }`}>
                     <div className="flex-1">
-                      <div className="font-medium">{event.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium">{event.name}</div>
+                        {event.status === 'cancelled' && (
+                          <Badge className="bg-red-100 text-red-700 text-xs">
+                            CANCELLATION REQUEST
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-sm text-muted-foreground space-y-1">
                         <div>
                           {formatDisplayDate(new Date(event.date))}
@@ -217,10 +226,10 @@ export default function DetailedNotificationsModal({
                       size="sm"
                       onClick={() => handleAcceptItem("event", event.id)}
                       disabled={acceptItemMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
+                      className={event.status === 'cancelled' ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
                     >
                       <Check className="w-4 h-4 mr-1" />
-                      Accept
+                      {event.status === 'cancelled' ? 'Approve Cancellation' : 'Accept'}
                     </Button>
                   </div>
                 ))}

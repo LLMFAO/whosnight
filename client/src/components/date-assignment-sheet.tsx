@@ -34,6 +34,9 @@ export default function DateAssignmentSheet({
   const [showEventForm, setShowEventForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancellingEvent, setCancellingEvent] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState("");
   const [eventForm, setEventForm] = useState({
     name: "",
     time: "",
@@ -61,19 +64,31 @@ export default function DateAssignmentSheet({
   });
 
   const deleteEventMutation = useMutation({
-    mutationFn: async (eventId: number) => {
-      return await apiRequest("DELETE", `/api/events/${eventId}`);
+    mutationFn: async (data: { eventId: number; reason: string }) => {
+      return await apiRequest("DELETE", `/api/events/${data.eventId}`, { reason: data.reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      setShowCancelForm(false);
+      setCancellingEvent(null);
+      setCancelReason("");
     },
   });
 
   const handleDeleteEvent = (event: any) => {
-    if (window.confirm(`Are you sure you want to cancel "${event.name}"? This will require approval from the other parent.`)) {
-      deleteEventMutation.mutate(event.id);
-    }
+    setCancellingEvent(event);
+    setShowCancelForm(true);
+  };
+
+  const handleCancelSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancellingEvent || !cancelReason.trim()) return;
+    
+    deleteEventMutation.mutate({
+      eventId: cancellingEvent.id,
+      reason: cancelReason.trim()
+    });
   };
 
   const handleEditEvent = (event: any) => {
@@ -292,6 +307,54 @@ export default function DateAssignmentSheet({
                 className="flex-1"
               >
                 {eventMutation.isPending ? "Adding..." : "Add Event"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Cancellation Modal */}
+      <Dialog open={showCancelForm} onOpenChange={setShowCancelForm}>
+        <DialogContent className="max-w-sm mx-4">
+          <DialogHeader>
+            <DialogTitle>Cancel Event</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCancelSubmit} className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-3">
+                You are requesting to cancel "{cancellingEvent?.name}". 
+                Please provide a reason for the cancellation.
+              </p>
+              <Label htmlFor="cancel-reason">Reason for Cancellation *</Label>
+              <Textarea
+                id="cancel-reason"
+                placeholder="Why are you canceling this event?"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                required
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCancelForm(false);
+                  setCancellingEvent(null);
+                  setCancelReason("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={deleteEventMutation.isPending || !cancelReason.trim()}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {deleteEventMutation.isPending ? "Cancelling..." : "Request Cancellation"}
               </Button>
             </div>
           </form>
