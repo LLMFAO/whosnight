@@ -127,6 +127,8 @@ Changelog:
 - June 17, 2025. Enhanced change history with user-friendly labels ("Night assigned", "Approved") instead of technical terms and improved timestamp formatting
 - June 17, 2025. Implemented auto-disable read-only mode when individual teen permissions are granted - provides visual feedback to parents
 - June 17, 2025. Removed expense section completely - streamlined app to focus on calendar and task management only
+- June 18, 2025. Fixed authentication system to properly track user actions - teen requests now logged with correct user ID and show up for both parents instead of just one
+- June 18, 2025. Completely rewrote request history with user-friendly interface, proper user separation, and clear status tracking
 ```
 
 ## User Preferences
