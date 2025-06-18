@@ -15,10 +15,15 @@ export async function apiRequest(
 ): Promise<Response> {
   const headers: any = data ? { "Content-Type": "application/json" } : {};
   
-  // Add user override header if provided
-  if (userOverride) {
-    headers["x-user"] = userOverride;
-  }
+  // Get current user from localStorage or URL if no override provided
+  const getCurrentUser = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const userParam = urlParams.get('user');
+    return userParam || localStorage.getItem('currentUser') || 'mom';
+  };
+
+  // Add user header - use override if provided, otherwise get current user
+  headers["x-user"] = userOverride || getCurrentUser();
 
   const res = await fetch(url, {
     method,
@@ -37,8 +42,22 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get current user from localStorage or URL
+    const getCurrentUser = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const userParam = urlParams.get('user');
+      return userParam || localStorage.getItem('currentUser') || 'mom';
+    };
+
+    const currentUser = getCurrentUser();
+    const headers: any = {};
+    
+    // Always include current user in requests
+    headers["x-user"] = currentUser;
+
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

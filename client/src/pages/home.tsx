@@ -28,6 +28,11 @@ export default function Home() {
   });
   const queryClient = useQueryClient();
 
+  // Sync localStorage on initial load and user changes
+  useEffect(() => {
+    localStorage.setItem('currentUser', currentUser);
+  }, [currentUser]);
+
   const { data: pendingItems } = useQuery({
     queryKey: ["/api/pending", currentUser],
     queryFn: () => fetch(`/api/pending?user=${currentUser}`).then(res => res.json()),
@@ -63,10 +68,11 @@ export default function Home() {
 
   const handleUserSwitch = (user: "mom" | "dad" | "teen") => {
     setCurrentUser(user);
-    // Update URL parameter to maintain user context
+    // Update both URL parameter and localStorage
     const url = new URL(window.location.href);
     url.searchParams.set('user', user);
     window.history.replaceState({}, '', url);
+    localStorage.setItem('currentUser', user);
     // Clear cache to refetch data for new user
     queryClient.clear();
   };
