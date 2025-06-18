@@ -28,7 +28,6 @@ export default function Home() {
     return userParam && ['mom', 'dad', 'teen'].includes(userParam) ? userParam : "mom";
   });
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
 
   // Sync localStorage on initial load and user changes
   useEffect(() => {
@@ -94,20 +93,6 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-1">
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="h-8 w-8 p-0"
-          >
-            {theme === "light" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Sun className="h-4 w-4" />
-            )}
-          </Button>
-
           {/* History */}
           <Button
             variant="ghost"
