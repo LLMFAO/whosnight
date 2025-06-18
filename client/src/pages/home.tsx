@@ -11,8 +11,7 @@ import UserRequestHistoryModal from "@/components/user-request-history-modal";
 import TeenPermissionsModal from "@/components/teen-permissions-modal";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Bell, History, Settings, Moon, Sun } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
+import { Bell, History, Settings } from "lucide-react";
 
 type ViewType = "calendar" | "todo";
 
