@@ -86,7 +86,7 @@ export default function Home() {
     <div className="max-w-md mx-auto bg-background min-h-screen relative">
       {/* Modern Header */}
       <div className="flex items-center justify-between p-4 bg-card border-b border-border">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2">
           <h1 className="text-lg font-mono font-bold tracking-tight">Who's Night?</h1>
           <UserRoleSelector
             currentRole={currentUser}
