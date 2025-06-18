@@ -2,16 +2,17 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CalendarView from "@/components/calendar-view";
 import TodoView from "@/components/todo-view";
-
 import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
 import UserRoleSelector from "@/components/user-role-selector";
 import NotificationBadge from "@/components/notification-badge";
 import UserRequestHistoryModal from "@/components/user-request-history-modal";
+import TeenPermissionsModal from "@/components/teen-permissions-modal";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Bell, User, History } from "lucide-react";
+import { Bell, History, Settings, Moon, Sun } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 
 type ViewType = "calendar" | "todo";
 
@@ -20,6 +21,7 @@ export default function Home() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
   const [showRequestHistory, setShowRequestHistory] = useState(false);
+  const [showTeenSettings, setShowTeenSettings] = useState(false);
   const [currentUser, setCurrentUser] = useState<"mom" | "dad" | "teen">(() => {
     // Initialize based on URL parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -27,6 +29,7 @@ export default function Home() {
     return userParam && ['mom', 'dad', 'teen'].includes(userParam) ? userParam : "mom";
   });
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
 
   // Sync localStorage on initial load and user changes
   useEffect(() => {
@@ -77,31 +80,72 @@ export default function Home() {
     queryClient.clear();
   };
 
+  const isParent = currentUser === "mom" || currentUser === "dad";
+
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen relative">
-      {/* User Role Selector with Notification Badge */}
-      <div className="flex items-center justify-between p-4 bg-background border-b">
-        <UserRoleSelector
-          currentRole={currentUser}
-          onRoleChange={handleUserSwitch}
-        />
+    <div className="max-w-md mx-auto bg-background min-h-screen relative">
+      {/* Modern Header */}
+      <div className="flex items-center justify-between p-4 bg-card border-b border-border">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-mono font-bold tracking-tight">Who's Night?</h1>
+          <UserRoleSelector
+            currentRole={currentUser}
+            onRoleChange={handleUserSwitch}
+          />
+        </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {/* Theme Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            className="h-8 w-8 p-0"
+          >
+            {theme === "light" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </Button>
+
+          {/* History */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowRequestHistory(true)}
-            className="p-2"
+            className="h-8 w-8 p-0"
           >
             <History className="h-4 w-4" />
           </Button>
-          
+
+          {/* Notifications for parents only */}
           {showNotificationBadge && (
-            <NotificationBadge
-              pendingCount={pendingCount}
-              pendingItems={pendingItems}
-              onAcceptAll={handleAcceptAll}
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDetailedNotifications(true)}
+              className="h-8 w-8 p-0 relative"
+            >
+              <Bell className="h-4 w-4" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
+                  {pendingCount}
+                </span>
+              )}
+            </Button>
+          )}
+
+          {/* Teen Settings for parents only */}
+          {isParent && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowTeenSettings(true)}
+              className="h-8 w-8 p-0"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -137,6 +181,13 @@ export default function Home() {
       <UserRequestHistoryModal
         open={showRequestHistory}
         onOpenChange={setShowRequestHistory}
+      />
+
+      {/* Teen Settings Modal */}
+      <TeenPermissionsModal
+        open={showTeenSettings}
+        onOpenChange={setShowTeenSettings}
+        teenUserId={3}
       />
     </div>
   );
