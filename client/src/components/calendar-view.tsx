@@ -156,7 +156,7 @@ export default function CalendarView() {
   return (
     <div>
       {/* Calendar Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
+      <div className="sticky top-0 bg-background border-b border-border z-10">
         <div className="flex items-center justify-between p-4">
           <Button
             variant="ghost"
@@ -166,7 +166,7 @@ export default function CalendarView() {
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold text-foreground">
             {format(currentMonth, "MMMM yyyy")}
           </h1>
           <Button
@@ -181,7 +181,7 @@ export default function CalendarView() {
         
         {/* Parent Days Summary */}
         <div className="px-4 pb-4">
-          <div className="bg-gray-50 rounded-xl p-3 flex justify-between items-center">
+          <div className="bg-muted rounded-xl p-3 flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "var(--mom-primary)" }}></div>
               <span className="text-sm font-medium">Mom: {momDaysCount} days</span>

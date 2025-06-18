@@ -90,9 +90,9 @@
 }
 
 .mom-day-pending {
-  background-color: var(--mom-light);
-  color: var(--dark-text);
-  border: 2px dashed var(--mom-primary);
+  background-color: hsl(0, 73%, 77%);
+  color: hsl(var(--foreground));
+  border: 2px dashed hsl(0, 73%, 57%);
 }
 
 /* Dad's assigned days */
@@ -102,16 +102,16 @@
 }
 
 .dad-day-pending {
-  background-color: var(--dad-light);
-  color: var(--dark-text);
-  border: 2px dashed var(--dad-primary);
+  background-color: hsl(221, 83%, 73%);
+  color: hsl(var(--foreground));
+  border: 2px dashed hsl(221, 83%, 53%);
 }
 
 /* Unassigned days */
 .unassigned-day {
-  background-color: white;
-  border: 1px solid hsl(20, 5.9%, 90%);
-  color: var(--dark-text);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
 }
 
 /* Animations */
