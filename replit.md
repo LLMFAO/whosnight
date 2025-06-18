@@ -130,6 +130,8 @@ Changelog:
 - June 18, 2025. Fixed authentication system to properly track user actions - teen requests now logged with correct user ID and show up for both parents instead of just one
 - June 18, 2025. Completely rewrote request history with user-friendly interface, proper user separation, and clear status tracking
 - June 18, 2025. Removed expense permission from teen settings - cleaned up database schema and UI to focus on calendar, events, and tasks only
+- June 18, 2025. Fixed header layout overlap issue by moving user role selector below app title in vertical layout
+- June 18, 2025. Prepared app for iOS deployment with full PWA capabilities - added manifest, service worker, iOS meta tags, and app icons for home screen installation
 ```
 
 ## User Preferences
