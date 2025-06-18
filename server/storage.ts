@@ -404,11 +404,12 @@ export class DatabaseStorage implements IStorage {
     tasks: Task[];
     expenses: Expense[];
   }> {
+    const momId = 1;
+    const dadId = 2;
+    const teenId = 3;
+    
     // For teens (userId 3), show nothing - they can't approve items
-    // For parents (userId 1 or 2), show items that need their approval
-    // Parents should see items created by other users (including the other parent and teens)
-    // But parents should not see items they created themselves
-    const isParent = userId === 1 || userId === 2;
+    const isParent = userId === momId || userId === dadId;
     
     if (!isParent) {
       return {
@@ -419,17 +420,23 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
-    // Get the other parent's ID (if mom is viewing, show dad's items and vice versa)
-    // Also include teen's items (userId 3) regardless of which parent is viewing
-    const otherParentId = userId === 1 ? 2 : 1;
-    const teenId = 3;
-
+    // Parents see:
+    // 1. Items created by teen (both parents should see teen requests)
+    // 2. Items created by the other parent (mom sees dad's items, dad sees mom's items)
+    // But NOT items they created themselves
+    
     const pendingAssignments = await db
       .select()
       .from(calendarAssignments)
       .where(and(
         eq(calendarAssignments.status, "pending"),
-        ne(calendarAssignments.createdBy, userId) // Don't show items created by current user
+        or(
+          eq(calendarAssignments.createdBy, teenId), // Both parents see teen requests
+          and(
+            ne(calendarAssignments.createdBy, userId), // Don't show own items
+            or(eq(calendarAssignments.createdBy, momId), eq(calendarAssignments.createdBy, dadId)) // Show other parent's items
+          )
+        )
       ));
 
     const pendingEvents = await db
@@ -437,7 +444,13 @@ export class DatabaseStorage implements IStorage {
       .from(events)
       .where(and(
         eq(events.status, "pending"),
-        ne(events.createdBy, userId) // Don't show items created by current user
+        or(
+          eq(events.createdBy, teenId), // Both parents see teen requests
+          and(
+            ne(events.createdBy, userId), // Don't show own items
+            or(eq(events.createdBy, momId), eq(events.createdBy, dadId)) // Show other parent's items
+          )
+        )
       ));
 
     // Also get cancelled events for approval
@@ -446,7 +459,13 @@ export class DatabaseStorage implements IStorage {
       .from(events)
       .where(and(
         eq(events.status, "cancelled"),
-        ne(events.createdBy, userId) // Don't show items created by current user
+        or(
+          eq(events.createdBy, teenId), // Both parents see teen requests
+          and(
+            ne(events.createdBy, userId), // Don't show own items
+            or(eq(events.createdBy, momId), eq(events.createdBy, dadId)) // Show other parent's items
+          )
+        )
       ));
 
     // Combine pending and cancelled events
@@ -457,7 +476,13 @@ export class DatabaseStorage implements IStorage {
       .from(tasks)
       .where(and(
         eq(tasks.status, "pending"),
-        ne(tasks.createdBy, userId) // Don't show items created by current user
+        or(
+          eq(tasks.createdBy, teenId), // Both parents see teen requests
+          and(
+            ne(tasks.createdBy, userId), // Don't show own items
+            or(eq(tasks.createdBy, momId), eq(tasks.createdBy, dadId)) // Show other parent's items
+          )
+        )
       ));
 
     const pendingExpenses = await db
@@ -465,7 +490,13 @@ export class DatabaseStorage implements IStorage {
       .from(expenses)
       .where(and(
         eq(expenses.status, "pending"),
-        ne(expenses.createdBy, userId) // Don't show items created by current user
+        or(
+          eq(expenses.createdBy, teenId), // Both parents see teen requests
+          and(
+            ne(expenses.createdBy, userId), // Don't show own items
+            or(eq(expenses.createdBy, momId), eq(expenses.createdBy, dadId)) // Show other parent's items
+          )
+        )
       ));
 
     return {
