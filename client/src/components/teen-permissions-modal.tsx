@@ -20,7 +20,6 @@ interface TeenPermissions {
   canModifyAssignments: boolean;
   canAddEvents: boolean;
   canAddTasks: boolean;
-  canAddExpenses: boolean;
   isReadOnly: boolean;
   modifiedBy: number;
   modifiedAt: string;
@@ -43,7 +42,6 @@ export default function TeenPermissionsModal({
     canModifyAssignments: false,
     canAddEvents: false,
     canAddTasks: false,
-    canAddExpenses: false,
     isReadOnly: true,
   });
 
@@ -54,7 +52,6 @@ export default function TeenPermissionsModal({
         canModifyAssignments: permissions.canModifyAssignments,
         canAddEvents: permissions.canAddEvents,
         canAddTasks: permissions.canAddTasks,
-        canAddExpenses: permissions.canAddExpenses,
         isReadOnly: permissions.isReadOnly,
       });
     }
@@ -97,13 +94,12 @@ export default function TeenPermissionsModal({
   const handleReadOnlyToggle = (value: boolean) => {
     setLocalPermissions(prev => ({
       ...prev,
-      isReadOnly: value,
+      isReadOnly: value,  
       // If read-only is enabled, disable all other permissions
       ...(value ? {
         canModifyAssignments: false,
         canAddEvents: false,
         canAddTasks: false,
-        canAddExpenses: false,
       } : {})
     }));
   };
@@ -198,18 +194,6 @@ export default function TeenPermissionsModal({
                   id="add-tasks"
                   checked={localPermissions.canAddTasks ?? false}
                   onCheckedChange={(value) => handlePermissionChange('canAddTasks', value)}
-                  disabled={localPermissions.isReadOnly}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="add-expenses" className="text-sm">
-                  Add Expenses
-                </Label>
-                <Switch
-                  id="add-expenses"
-                  checked={localPermissions.canAddExpenses ?? false}
-                  onCheckedChange={(value) => handlePermissionChange('canAddExpenses', value)}
                   disabled={localPermissions.isReadOnly}
                 />
               </div>

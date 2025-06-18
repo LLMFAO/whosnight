@@ -87,7 +87,7 @@ export interface IStorage {
   getTeenPermissions(teenUserId: number): Promise<TeenPermissions | undefined>;
   createTeenPermissions(permissions: InsertTeenPermissions): Promise<TeenPermissions>;
   updateTeenPermissions(teenUserId: number, updates: Partial<TeenPermissions>, modifiedBy: number): Promise<TeenPermissions | undefined>;
-  isTeenAllowed(teenUserId: number, action: 'modifyAssignments' | 'addEvents' | 'addTasks' | 'addExpenses'): Promise<boolean>;
+  isTeenAllowed(teenUserId: number, action: 'modifyAssignments' | 'addEvents' | 'addTasks'): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
