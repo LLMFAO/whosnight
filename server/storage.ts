@@ -134,7 +134,6 @@ export class DatabaseStorage implements IStorage {
           canModifyAssignments: false,
           canAddEvents: false,
           canAddTasks: false,
-          canAddExpenses: false,
           isReadOnly: true,
           modifiedBy: 1 // Mom's ID
         });
@@ -620,7 +619,7 @@ export class DatabaseStorage implements IStorage {
     return permissions || undefined;
   }
 
-  async isTeenAllowed(teenUserId: number, action: 'modifyAssignments' | 'addEvents' | 'addTasks' | 'addExpenses'): Promise<boolean> {
+  async isTeenAllowed(teenUserId: number, action: 'modifyAssignments' | 'addEvents' | 'addTasks'): Promise<boolean> {
     const permissions = await this.getTeenPermissions(teenUserId);
     if (!permissions) return false;
     
@@ -634,8 +633,6 @@ export class DatabaseStorage implements IStorage {
         return permissions.canAddEvents ?? false;
       case 'addTasks':
         return permissions.canAddTasks ?? false;
-      case 'addExpenses':
-        return permissions.canAddExpenses ?? false;
       default:
         return false;
     }

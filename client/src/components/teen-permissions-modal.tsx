@@ -49,10 +49,10 @@ export default function TeenPermissionsModal({
   useEffect(() => {
     if (permissions) {
       setLocalPermissions({
-        canModifyAssignments: permissions.canModifyAssignments,
-        canAddEvents: permissions.canAddEvents,
-        canAddTasks: permissions.canAddTasks,
-        isReadOnly: permissions.isReadOnly,
+        canModifyAssignments: permissions.canModifyAssignments || false,
+        canAddEvents: permissions.canAddEvents || false,
+        canAddTasks: permissions.canAddTasks || false,
+        isReadOnly: permissions.isReadOnly ?? true,
       });
     }
   }, [permissions]);
@@ -115,8 +115,8 @@ export default function TeenPermissionsModal({
           <DialogHeader>
             <DialogTitle>Teen Permissions</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center p-8">
-            <div className="text-center">Loading permissions...</div>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-sm text-muted-foreground">Loading permissions...</div>
           </div>
         </DialogContent>
       </Dialog>
@@ -125,16 +125,16 @@ export default function TeenPermissionsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Teen Permissions Settings</DialogTitle>
+          <DialogTitle>Teen Permissions</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
-          {/* Read-Only Mode */}
+          {/* Read-Only Mode Toggle */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="read-only" className="text-base font-medium">
+              <Label htmlFor="read-only" className="text-sm font-medium">
                 Read-Only Mode
               </Label>
               <Switch

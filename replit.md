@@ -129,6 +129,7 @@ Changelog:
 - June 17, 2025. Removed expense section completely - streamlined app to focus on calendar and task management only
 - June 18, 2025. Fixed authentication system to properly track user actions - teen requests now logged with correct user ID and show up for both parents instead of just one
 - June 18, 2025. Completely rewrote request history with user-friendly interface, proper user separation, and clear status tracking
+- June 18, 2025. Removed expense permission from teen settings - cleaned up database schema and UI to focus on calendar, events, and tasks only
 ```
 
 ## User Preferences
