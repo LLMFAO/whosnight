@@ -13,7 +13,7 @@ import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Bell, History, Settings } from "lucide-react";
 
-type ViewType = "calendar" | "todo";
+type ViewType = "calendar" | "todo" | "mobile";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("calendar");

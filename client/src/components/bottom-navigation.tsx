@@ -1,9 +1,9 @@
-import { Calendar, CheckSquare } from "lucide-react";
+import { Calendar, CheckSquare, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomNavigationProps {
-  currentView: "calendar" | "todo";
-  onViewChange: (view: "calendar" | "todo") => void;
+  currentView: "calendar" | "todo" | "mobile";
+  onViewChange: (view: "calendar" | "todo" | "mobile") => void;
 }
 
 export default function BottomNavigation({ currentView, onViewChange }: BottomNavigationProps) {
@@ -17,6 +17,11 @@ export default function BottomNavigation({ currentView, onViewChange }: BottomNa
       id: "todo" as const,
       label: "To-Do",
       icon: CheckSquare,
+    },
+    {
+      id: "mobile" as const,
+      label: "Mobile App",
+      icon: Smartphone,
     },
   ];
 
