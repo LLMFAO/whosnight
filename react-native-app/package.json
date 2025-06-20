@@ -1,6 +1,6 @@
 {
   "name": "coparent-expo-app",
-  "main": "expo-router/entry",
+  "main": "App-Simple.tsx",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -11,6 +11,8 @@
   "dependencies": {
     "expo": "~50.0.0",
     "expo-status-bar": "~1.11.1",
+    "expo-apple-authentication": "~6.3.0",
+    "expo-secure-store": "~12.8.1",
     "react": "18.2.0",
     "react-native": "0.73.6",
     "react-native-paper": "^5.12.3",
