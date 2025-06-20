@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Who's Night?",
-    "slug": "coparent-app",
+    "name": "CoParent Connect",
+    "slug": "coparent-connect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,21 +16,17 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.coparent.whosnight"
+      "bundleIdentifier": "com.coparent.connect"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFFFF"
       },
-      "package": "com.coparent.whosnight"
+      "package": "com.coparent.connect"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-calendar",
-      "expo-notifications"
-    ]
+    }
   }
 }
