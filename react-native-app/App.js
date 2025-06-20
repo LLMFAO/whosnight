@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import AppleSignInComponent from './src/components/AppleSignIn';
 
 // Simple calendar component
 const SimpleCalendar = () => {
@@ -110,16 +111,40 @@ const TaskList = () => {
 // Main app with tab navigation
 export default function App() {
   const [currentTab, setCurrentTab] = useState('calendar');
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+
+  const handleSignInSuccess = (userData) => {
+    setAuthenticatedUser(userData);
+    console.log('User authenticated successfully:', userData.user);
+  };
+
+  const renderContent = () => {
+    switch (currentTab) {
+      case 'calendar':
+        return <SimpleCalendar />;
+      case 'tasks':
+        return <TaskList />;
+      case 'auth':
+        return <AppleSignInComponent onSignInSuccess={handleSignInSuccess} />;
+      default:
+        return <SimpleCalendar />;
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.appTitle}>CoParent Connect</Text>
         <Text style={styles.subtitle}>Coordinate • Communicate • Connect</Text>
+        {authenticatedUser && (
+          <Text style={styles.userInfo}>
+            Signed in as: {authenticatedUser.fullName?.givenName || 'User'}
+          </Text>
+        )}
       </View>
 
       <ScrollView style={styles.content}>
-        {currentTab === 'calendar' ? <SimpleCalendar /> : <TaskList />}
+        {renderContent()}
       </ScrollView>
 
       <View style={styles.tabBar}>
@@ -137,6 +162,14 @@ export default function App() {
         >
           <Text style={[styles.tabText, currentTab === 'tasks' && styles.activeTabText]}>
             ✓ Tasks
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, currentTab === 'auth' && styles.activeTab]}
+          onPress={() => setCurrentTab('auth')}
+        >
+          <Text style={[styles.tabText, currentTab === 'auth' && styles.activeTabText]}>
+             Sign In
           </Text>
         </TouchableOpacity>
       </View>
@@ -271,5 +304,12 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  userInfo: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 5,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

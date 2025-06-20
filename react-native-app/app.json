@@ -8,6 +8,13 @@
     "splash": {
       "backgroundColor": "#4A90E2"
     },
-    "userInterfaceStyle": "light"
+    "userInterfaceStyle": "light",
+    "ios": {
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.coparent.connect"
+    },
+    "plugins": [
+      "expo-apple-authentication"
+    ]
   }
 }
