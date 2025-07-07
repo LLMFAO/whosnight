@@ -1,5 +1,5 @@
 
-# CoParent Connect
+# Who'sNight
 
 A mobile-first web application designed to help co-parents coordinate schedules, manage shared tasks, and track expenses. Built with React, TypeScript, Express.js, and PostgreSQL.
 
@@ -44,7 +44,7 @@ A mobile-first web application designed to help co-parents coordinate schedules,
 
 ```bash
 git clone <your-repo-url>
-cd coparent-connect
+cd whos-night
 npm install
 ```
 
@@ -54,7 +54,7 @@ Create environment variables for the following:
 
 ```bash
 # Database
-DATABASE_URL=postgresql://username:password@localhost:5432/coparent_connect
+DATABASE_URL=postgresql://username:password@localhost:5432/whos_night
 
 # Session Secret (generate a random 64+ character string)
 SESSION_SECRET=your-super-secret-random-string-here
@@ -75,7 +75,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 1. Install PostgreSQL locally
 2. Create a database:
    ```sql
-   CREATE DATABASE coparent_connect;
+   CREATE DATABASE whos_night;
    ```
 3. Update `DATABASE_URL` with your local connection string
 
