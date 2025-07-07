@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="#4F46E5"/>
+  
+  <!-- Calendar Icon -->
+  <rect x="128" y="160" width="256" height="224" rx="24" fill="white"/>
+  <rect x="128" y="160" width="256" height="64" rx="24" fill="#E5E7EB"/>
+  <rect x="128" y="200" width="256" height="24" fill="#4F46E5"/>
+  
+  <!-- Calendar Grid -->
+  <line x1="180" y1="240" x2="180" y2="360" stroke="#E5E7EB" stroke-width="2"/>
+  <line x1="220" y1="240" x2="220" y2="360" stroke="#E5E7EB" stroke-width="2"/>
+  <line x1="260" y1="240" x2="260" y2="360" stroke="#E5E7EB" stroke-width="2"/>
+  <line x1="300" y1="240" x2="300" y2="360" stroke="#E5E7EB" stroke-width="2"/>
+  <line x1="340" y1="240" x2="340" y2="360" stroke="#E5E7EB" stroke-width="2"/>
+  
+  <line x1="148" y1="260" x2="364" y2="260" stroke="#E5E7EB" stroke-width="2"/>
+  <line x1="148" y1="300" x2="364" y2="300" stroke="#E5E7EB" stroke-width="2"/>
+  <line x1="148" y1="340" x2="364" y2="340" stroke="#E5E7EB" stroke-width="2"/>
+  
+  <!-- Mom's Night (Red) -->
+  <circle cx="154" cy="280" r="12" fill="#EF4444"/>
+  
+  <!-- Dad's Night (Blue) -->
+  <circle cx="234" cy="320" r="12" fill="#3B82F6"/>
+  
+  <!-- Teen's Night (Green) -->
+  <circle cx="314" cy="280" r="12" fill="#10B981"/>
+  
+  <!-- Night/Moon Symbol -->
+  <path d="M200 120 C180 100, 140 100, 140 140 C140 180, 180 180, 200 160 C190 170, 170 170, 170 140 C170 120, 190 120, 200 120 Z" fill="#FCD34D"/>
+</svg>

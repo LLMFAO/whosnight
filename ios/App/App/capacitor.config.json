@@ -1,0 +1,9 @@
+{
+	"appId": "com.whosnight.app",
+	"appName": "Who's Night",
+	"webDir": "dist/public",
+	"server": {
+		"androidScheme": "https"
+	},
+	"packageClassList": []
+}
