@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, CheckSquare, DollarSign, Users } from "lucide-react";
+import { Calendar, CheckSquare, Users } from "lucide-react";
 
 interface WelcomeScreenProps {
   onNext: () => void;
@@ -10,7 +10,7 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900">Welcome to Who'sNight!</h1>
+        <h1 className="text-4xl font-bold text-gray-900">Welcome to Who's Night?!</h1>
         <p className="text-xl text-gray-600">
           The family coordination app that makes managing your household simple and stress-free.
         </p>
@@ -37,18 +37,6 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
           <CardContent>
             <CardDescription>
               Create and manage family tasks. Track completion and ensure nothing falls through the cracks.
-            </CardDescription>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="text-center">
-            <DollarSign className="w-12 h-12 mx-auto text-yellow-500" />
-            <CardTitle>Expense Tracking</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>
-              Monitor family expenses, track who paid for what, and maintain financial transparency.
             </CardDescription>
           </CardContent>
         </Card>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Paperclip } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, getExpensesSummary, formatMonth } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -36,21 +36,35 @@ export default function ExpensesView() {
   const queryClient = useQueryClient();
   const currentMonth = formatMonth(new Date());
 
-  const { data: expenses = [] } = useQuery({
-    queryKey: ["/api/expenses"],
+  const { data: expenses = [], error: expensesError } = useQuery({
+    queryKey: ["expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("expenses").select("*");
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const { data: pendingItems } = useQuery({
-    queryKey: ["/api/pending"],
+  const { data: pendingItems, error: pendingError } = useQuery({
+    queryKey: ["get_pending_items"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{
+        expenses: any[];
+      }>("get_pending_items", { search: { user: /* provide user context or default */ "" } });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const createExpenseMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/expenses", data);
+    mutationFn: async (expense: any) => {
+      const { data, error } = await supabase.from("expenses").insert(expense);
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
       setShowAddExpenseModal(false);
       setExpenseForm({
         name: "",
@@ -65,21 +79,26 @@ export default function ExpensesView() {
 
   const updateExpenseStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return await apiRequest("PUT", `/api/expenses/${id}/status`, { status });
+      const { data, error } = await supabase.from("expenses").update({ status }).eq("id", id);
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
     },
   });
 
   const acceptAllExpensesMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/accept-all", { itemTypes: ["expenses"] });
+      const { error } = await supabase.from("expenses")
+        .update({ status: "confirmed" })
+        .eq("status", "pending");
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
     },
   });
 

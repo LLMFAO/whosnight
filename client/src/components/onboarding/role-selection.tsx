@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Shield, Sparkles } from "lucide-react";
+import { Heart, Shield, Sparkles, Users } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -65,6 +65,19 @@ export function RoleSelection({ onNext, onBack }: RoleSelectionProps) {
         "Track personal tasks",
         "Limited editing permissions"
       ]
+    },
+    {
+      id: "caretaker",
+      title: "Caretaker",
+      description: "View family schedules and activities. Perfect for nannies, grandparents, aunts, uncles, and other family helpers.",
+      icon: Users,
+      color: "bg-green-100 text-green-700",
+      features: [
+        "View family calendar",
+        "See all family activities",
+        "Read-only access",
+        "No editing permissions"
+      ]
     }
   ];
 
@@ -87,7 +100,7 @@ export function RoleSelection({ onNext, onBack }: RoleSelectionProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {roles.map((role) => {
           const Icon = role.icon;
           const isSelected = selectedRole === role.id;

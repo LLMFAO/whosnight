@@ -16,7 +16,7 @@ export function CompletionScreen({ onComplete, onBack }: CompletionScreenProps) 
         </div>
         <h2 className="text-3xl font-bold text-gray-900">You're All Set!</h2>
         <p className="text-lg text-gray-600">
-          Welcome to Who'sNight! Your account is ready and you can start coordinating with your family.
+          Welcome to Who's Night?! Your account is ready and you can start coordinating with your family.
         </p>
       </div>
 
@@ -83,7 +83,7 @@ export function CompletionScreen({ onComplete, onBack }: CompletionScreenProps) 
           Back
         </Button>
         <Button onClick={onComplete} className="flex items-center gap-2">
-          Start Using Who'sNight
+          Start Using Who's Night?
           <ArrowRight className="w-4 h-4" />
         </Button>
       </div>

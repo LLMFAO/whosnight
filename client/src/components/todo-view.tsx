@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, X } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 
 export default function TodoView() {
@@ -22,21 +22,35 @@ export default function TodoView() {
   });
   const queryClient = useQueryClient();
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["/api/tasks"],
+  const { data: tasks = [], error: tasksError } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("tasks").select("*");
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const { data: pendingItems } = useQuery({
-    queryKey: ["/api/pending"],
+  const { data: pendingItems, error: pendingError } = useQuery({
+    queryKey: ["get_pending_items"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{
+        tasks: any[];
+      }>("get_pending_items", { search: { user: /* provide user context or default */ "" } });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/tasks", data);
+    mutationFn: async (task: any) => {
+      const { data, error } = await supabase.from("tasks").insert(task);
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
       setShowAddTaskModal(false);
       setTaskForm({ name: "", description: "", dueDate: "", assignedTo: "mom" });
     },
@@ -44,30 +58,37 @@ export default function TodoView() {
 
   const updateTaskStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return await apiRequest("PUT", `/api/tasks/${id}/status`, { status });
+      const { data, error } = await supabase.from("tasks").update({ status }).eq("id", id);
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
     },
   });
 
   const toggleCompleteMutation = useMutation({
     mutationFn: async ({ id, completed }: { id: number; completed: boolean }) => {
-      return await apiRequest("PUT", `/api/tasks/${id}/complete`, { completed });
+      const { data, error } = await supabase.from("tasks").update({ completed: !completed }).eq("id", id);
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
   const acceptAllTasksMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/accept-all", { itemTypes: ["tasks"] });
+      const { error } = await supabase.from("tasks")
+        .update({ status: "confirmed" })
+        .eq("status", "pending");
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
     },
   });
 

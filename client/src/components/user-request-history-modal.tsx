@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -136,32 +137,37 @@ export default function UserRequestHistoryModal({
   const currentUser = localStorage.getItem('currentUser') || 'mom';
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['my-requests', currentUser],
-    queryFn: () => fetch('/api/my-requests', {
-      headers: { 'x-user': currentUser }
-    }).then(res => res.json()),
+    queryKey: ['action_logs', currentUser],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('action_logs')
+        .select('*')
+        .eq('requested_by', currentUser);
+      if (error) throw error;
+      return data;
+    },
     enabled: open,
   });
 
   const undoMutation = useMutation({
     mutationFn: async (logId: number) => {
-      const response = await fetch(`/api/undo/${logId}`, {
-        method: 'POST',
-        headers: { 'x-user': currentUser }
-      });
-      if (!response.ok) throw new Error('Failed to undo change');
-      return response.json();
+      const { data, error } = await supabase
+        .from('action_logs')
+        .update({ action: 'undone' })
+        .eq('id', logId);
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({
         title: "Change undone",
         description: "Your action has been reversed."
       });
-      queryClient.invalidateQueries({ queryKey: ['my-requests', currentUser] });
-      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['action_logs', currentUser] });
+      queryClient.invalidateQueries({ queryKey: ['calendar_assignments'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['pending'] });
+      queryClient.invalidateQueries({ queryKey: ['get_pending_items', currentUser] });
       setUndoingLogId(null);
     },
     onError: (error: any) => {

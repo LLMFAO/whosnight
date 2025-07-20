@@ -2,12 +2,20 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "dri
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const families = pgTable("families", {
+  id: serial("id").primaryKey(),
+  name: text("name"), // Optional: User-defined family name
+  code: text("code").notNull().unique(), // Unique code for joining families
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  role: text("role").notNull(), // "mom", "dad", or "teen"
+  role: text("role").notNull(), // "mom", "dad", "teen", or "caretaker"
+  familyId: integer("family_id").references(() => families.id), // Links to the families table
 });
 
 export const calendarAssignments = pgTable("calendar_assignments", {
@@ -87,12 +95,18 @@ export const teenPermissions = pgTable("teen_permissions", {
   canModifyAssignments: boolean("can_modify_assignments").default(false),
   canAddEvents: boolean("can_add_events").default(false),
   canAddTasks: boolean("can_add_tasks").default(false),
+  canAddExpenses: boolean("can_add_expenses").default(false), // Added this line
   isReadOnly: boolean("is_read_only").default(true),
   modifiedBy: integer("modified_by").notNull(), // parent who set permissions
   modifiedAt: timestamp("modified_at").defaultNow().notNull(),
 });
 
 // Insert schemas
+export const insertFamilySchema = createInsertSchema(families).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
 });
@@ -139,8 +153,19 @@ export const insertTeenPermissionsSchema = createInsertSchema(teenPermissions).o
 });
 
 // Types
+export type Family = typeof families.$inferSelect;
+export type InsertFamily = z.infer<typeof insertFamilySchema>;
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export const updateUserSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  // Add other updatable fields here, e.g., password, role, familyId
+  // For password, you'd typically have a separate change password flow
+  // For role and familyId, changes might be restricted to admin roles
+});
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 
 export type CalendarAssignment = typeof calendarAssignments.$inferSelect;
 export type InsertCalendarAssignment = z.infer<typeof insertCalendarAssignmentSchema>;
@@ -162,3 +187,6 @@ export type InsertShareLink = z.infer<typeof insertShareLinkSchema>;
 
 export type TeenPermissions = typeof teenPermissions.$inferSelect;
 export type InsertTeenPermissions = z.infer<typeof insertTeenPermissionsSchema>;
+
+export const insertMultipleCalendarAssignmentsSchema = z.array(insertCalendarAssignmentSchema);
+export type InsertMultipleCalendarAssignments = z.infer<typeof insertMultipleCalendarAssignmentsSchema>;

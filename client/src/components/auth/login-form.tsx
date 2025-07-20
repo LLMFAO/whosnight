@@ -48,7 +48,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
         <CardDescription>
-          Enter your credentials to access Who'sNight
+          Enter your credentials to access Who's Night?
         </CardDescription>
       </CardHeader>
       <CardContent>

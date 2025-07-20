@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { WelcomeScreen } from "@/components/onboarding/welcome-screen";
+import { FamilySetupScreen } from "@/components/onboarding/family-setup-screen";
 import { RoleSelection } from "@/components/onboarding/role-selection";
 import { CompletionScreen } from "@/components/onboarding/completion-screen";
 import { useLocation } from "wouter";
@@ -10,6 +11,7 @@ export function OnboardingPage() {
 
   const steps = [
     { component: WelcomeScreen, title: "Welcome" },
+    { component: FamilySetupScreen, title: "Family Setup" },
     { component: RoleSelection, title: "Role Selection" },
     { component: CompletionScreen, title: "Complete" }
   ];

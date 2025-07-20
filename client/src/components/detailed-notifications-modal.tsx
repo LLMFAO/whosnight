@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, DollarSign, CheckSquare, Check, X, User } from "lucide-react";
 import { formatDisplayDate } from "@/lib/utils";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface DetailedNotificationsModalProps {
@@ -29,12 +29,12 @@ export default function DetailedNotificationsModal({
   const queryClient = useQueryClient();
 
   // Fetch action logs to get cancellation reasons
-  const { data: actionLogs = [] } = useQuery({
-    queryKey: ["/api/action-logs"],
+  const { data: actionLogs = [], error: actionLogsError } = useQuery({
+    queryKey: ["action_logs"],
     queryFn: async () => {
-      const response = await fetch("/api/action-logs");
-      if (!response.ok) return [];
-      return response.json();
+      const { data, error } = await supabase.from("action_logs").select("*");
+      if (error) throw error;
+      return data;
     },
     enabled: open && pendingItems.events.some((event: any) => event.status === 'cancelled'),
   });

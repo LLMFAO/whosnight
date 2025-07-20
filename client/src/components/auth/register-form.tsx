@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useMutation } from "@tanstack/react-query";
 
 interface RegisterFormProps {
@@ -18,9 +19,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
+  const [familyCode, setFamilyCode] = useState("");
+  const [joinExistingFamily, setJoinExistingFamily] = useState(false);
 
   const registerMutation = useMutation({
-    mutationFn: async (userData: { username: string; password: string; name: string; role: string }) => {
+    mutationFn: async (userData: { username: string; password: string; name: string; role: string; familyCode?: string }) => {
+      // First register the user
       const response = await fetch("/api/register", {
         method: "POST",
         headers: {
@@ -35,7 +39,26 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         throw new Error(error.message || "Registration failed");
       }
 
-      return response.json();
+      const result = await response.json();
+
+      // If family code is provided, join the family
+      if (userData.familyCode) {
+        const joinResponse = await fetch("/api/family/join", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ familyCode: userData.familyCode }),
+          credentials: "include",
+        });
+
+        if (!joinResponse.ok) {
+          const error = await joinResponse.json();
+          throw new Error(error.message || "Failed to join family");
+        }
+      }
+
+      return result;
     },
     onSuccess: (data) => {
       onSuccess(data.user);
@@ -49,7 +72,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       return;
     }
     
-    registerMutation.mutate({ username, password, name, role });
+    registerMutation.mutate({
+      username,
+      password,
+      name,
+      role,
+      familyCode: joinExistingFamily ? familyCode : undefined
+    });
   };
 
   return (
@@ -57,7 +86,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       <CardHeader>
         <CardTitle>Create Account</CardTitle>
         <CardDescription>
-          Sign up for Who'sNight to get started
+          Sign up for Who's Night? to get started
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -112,6 +141,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 <SelectItem value="mom">Parent (Mom)</SelectItem>
                 <SelectItem value="dad">Parent (Dad)</SelectItem>
                 <SelectItem value="teen">Teen</SelectItem>
+                {joinExistingFamily && (
+                  <SelectItem value="caretaker">Caretaker</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -139,11 +171,48 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               disabled={registerMutation.isPending}
             />
           </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="joinFamily"
+                checked={joinExistingFamily}
+                onChange={(e) => setJoinExistingFamily(e.target.checked)}
+                disabled={registerMutation.isPending}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="joinFamily" className="text-sm">
+                Join an existing family (I have a family code)
+              </Label>
+            </div>
+
+            {joinExistingFamily && (
+              <div className="space-y-2">
+                <Label htmlFor="familyCode">Family Code</Label>
+                <Input
+                  id="familyCode"
+                  type="text"
+                  placeholder="e.g., ABC-12345"
+                  value={familyCode}
+                  onChange={(e) => setFamilyCode(e.target.value)}
+                  required={joinExistingFamily}
+                  disabled={registerMutation.isPending}
+                  className="text-center text-lg tracking-wider"
+                />
+                <p className="text-xs text-gray-500">
+                  Ask a family member for the family code to join their group.
+                </p>
+              </div>
+            )}
+          </div>
           
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full"
-            disabled={registerMutation.isPending || password !== confirmPassword || !role}
+            disabled={registerMutation.isPending || password !== confirmPassword || !role || (joinExistingFamily && !familyCode.trim())}
           >
             {registerMutation.isPending ? "Creating account..." : "Create Account"}
           </Button>

@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import passport from "passport";
@@ -7,8 +10,12 @@ import { setupVite, serveStatic, log } from "./vite";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+import connectPgSimple from 'connect-pg-simple';
+const PgSession = connectPgSimple(session);
+
 app.use(session({
-  store: new (require('connect-pg-simple')(session))(),
+  store: new PgSession(),
   secret: process.env.SESSION_SECRET || 'your-secret-key', // Use environment variable in production
   resave: false,
   saveUninitialized: false,

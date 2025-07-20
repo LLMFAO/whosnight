@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deployment options for the Who'sNight application, including web deployment and iOS App Store submission.
+This guide covers deployment options for the Who's Night? application, including web deployment and iOS App Store submission.
 
 ## Web Application Deployment
 

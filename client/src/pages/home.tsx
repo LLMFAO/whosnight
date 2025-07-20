@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CalendarView from "@/components/calendar-view";
 import TodoView from "@/components/todo-view";
@@ -38,9 +39,18 @@ export default function Home() {
     localStorage.setItem('currentUser', currentUser);
   }, [currentUser]);
 
-  const { data: pendingItems } = useQuery({
-    queryKey: ["/api/pending", currentUser],
-    queryFn: () => fetch(`/api/pending?user=${currentUser}`).then(res => res.json()),
+  const { data: pendingItems, error: pendingError } = useQuery({
+    queryKey: ["get_pending_items", currentUser],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{
+        assignments: any[];
+        events: any[];
+        tasks: any[];
+        expenses: any[];
+      }>("get_pending_items", { search: { user: currentUser } });
+      if (error) throw error;
+      return data;
+    },
     refetchInterval: 5000, // Check for updates every 5 seconds
   });
 
@@ -49,23 +59,22 @@ export default function Home() {
 
   const handleAcceptAll = async () => {
     try {
-      const response = await fetch("/api/accept-all", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          itemTypes: ["assignments", "events", "tasks"]
-        }),
-      });
-
-      if (response.ok) {
-        // Invalidate all relevant queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      }
+      await Promise.all([
+        supabase.from("calendar_assignments").update({ status: "confirmed" })
+          .eq("created_by", currentUser).eq("status", "pending"),
+        supabase.from("events").update({ status: "confirmed" })
+          .eq("created_by", currentUser).eq("status", "pending"),
+        supabase.from("tasks").update({ status: "confirmed" })
+          .eq("created_by", currentUser).eq("status", "pending"),
+        supabase.from("expenses").update({ status: "confirmed" })
+          .eq("created_by", currentUser).eq("status", "pending"),
+      ]);
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items", currentUser] });
+      queryClient.invalidateQueries({ queryKey: ["calendar_assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
     } catch (error) {
       console.error("Failed to accept all items:", error);
     }

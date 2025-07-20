@@ -1,6 +1,6 @@
 # iOS App Setup Guide
 
-This guide covers the complete setup process for converting the Who'sNight web application into a native iOS app using Capacitor.
+This guide covers the complete setup process for converting the Who's Night? web application into a native iOS app using Capacitor.
 
 ## Prerequisites
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Share, Check, Link, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,9 +26,13 @@ export default function ShareUpdatesModal({
 
   const shareLinkMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/share-link", {
-        message: `CoParent Connect Update: ${pendingCount} changes have been made!`,
-      });
+      const message = `CoParent Connect Update: ${pendingCount} changes have been made!`;
+      const { data, error } = await supabase.functions.invoke<{
+        message: string;
+        shareUrl: string;
+      }>("share_link", { body: { message } });
+      if (error) throw error;
+      return data;
     },
     onSuccess: (data: any) => {
       // Use native share API if available, otherwise copy to clipboard
@@ -53,21 +58,23 @@ export default function ShareUpdatesModal({
         });
       }
       
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
       onOpenChange(false);
     },
   });
 
   const notifyExternalMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/notify-external", {});
+      const { data, error } = await supabase.functions.invoke<void>("notify_external", { body: {} });
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({
         title: "Notification logged",
         description: "External notification has been recorded.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
       onOpenChange(false);
     },
   });
