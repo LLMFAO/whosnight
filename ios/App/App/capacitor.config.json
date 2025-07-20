@@ -5,5 +5,16 @@
 	"server": {
 		"androidScheme": "https"
 	},
-	"packageClassList": []
+	"plugins": {
+		"AdMob": {
+			"appId": "ca-app-pub-3940256099942544~3347511713",
+			"testingDevices": [
+				"YOUR_TESTING_DEVICE_ID"
+			],
+			"initializeForTesting": true
+		}
+	},
+	"packageClassList": [
+		"AdMobPlugin"
+	]
 }

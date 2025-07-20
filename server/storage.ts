@@ -32,6 +32,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getUserById(id: number): Promise<User | undefined>;
   
   // Calendar Assignments
   getCalendarAssignments(month: string): Promise<CalendarAssignment[]>;
@@ -93,6 +94,10 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   constructor() {
     this.initializeDefaultData();
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.getUser(id);
   }
 
   private async initializeDefaultData() {

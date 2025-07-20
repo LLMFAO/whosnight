@@ -1,17 +1,24 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { 
+import {
   insertCalendarAssignmentSchema,
   insertEventSchema,
   insertTaskSchema,
   insertExpenseSchema,
   insertActionLogSchema,
   insertShareLinkSchema,
-  insertTeenPermissionsSchema
+  insertTeenPermissionsSchema,
+  insertUserSchema,
+  users,
+  User
 } from "@shared/schema";
 import { z } from "zod";
 import { nanoid } from "nanoid";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import bcrypt from "bcrypt";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to get client IP
@@ -20,8 +27,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
            (req.connection.socket ? req.connection.socket.remoteAddress : null);
   };
 
+  // Passport.js setup for local strategy
+  passport.use(new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return done(null, false, { message: "Incorrect username." });
+      }
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        return done(null, false, { message: "Incorrect password." });
+      }
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }));
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUserById(id);
+      done(null, user || false);
+    } catch (err) {
+      done(err);
+    }
+  });
   // Mock authentication middleware (in production, use proper auth)
-  const mockAuth = (req: any, res: any, next: any) => {
+  const ensureAuthenticated = (req: any, res: any, next: any) => {
     // For demo purposes, alternate between users to show pending functionality
     // In a real app, this would be based on actual session/auth
     const userParam = req.query.user || req.headers['x-user'] || 'mom';
@@ -36,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Calendar routes
-  app.get("/api/calendar/assignments/:month", mockAuth, async (req, res) => {
+  app.get("/api/calendar/assignments/:month", ensureAuthenticated, async (req, res) => {
     try {
       const { month } = req.params;
       const assignments = await storage.getCalendarAssignments(month);
@@ -46,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/calendar/assignment/:id", mockAuth, async (req, res) => {
+  app.get("/api/calendar/assignment/:id", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const assignment = await storage.getCalendarAssignmentById(parseInt(id));
@@ -60,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/calendar/assignments", mockAuth, async (req, res) => {
+  app.post("/api/calendar/assignments", ensureAuthenticated, async (req, res) => {
     try {
       const validatedData = insertCalendarAssignmentSchema.parse({
         ...req.body,
@@ -108,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/calendar/assignments/:id/status", mockAuth, async (req, res) => {
+  app.put("/api/calendar/assignments/:id/status", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -135,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Events routes
-  app.get("/api/events/:date", mockAuth, async (req, res) => {
+  app.get("/api/events/:date", ensureAuthenticated, async (req, res) => {
     try {
       const { date } = req.params;
       const events = await storage.getEvents(date);
@@ -145,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/events", mockAuth, async (req, res) => {
+  app.post("/api/events", ensureAuthenticated, async (req, res) => {
     try {
       const validatedData = insertEventSchema.parse({
         ...req.body,
@@ -168,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/events/:id/status", mockAuth, async (req, res) => {
+  app.put("/api/events/:id/status", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -192,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/events/:id", mockAuth, async (req, res) => {
+  app.delete("/api/events/:id", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { reason } = req.body;
@@ -228,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tasks routes
-  app.get("/api/tasks", mockAuth, async (req, res) => {
+  app.get("/api/tasks", ensureAuthenticated, async (req, res) => {
     try {
       const tasks = await storage.getTasks();
       res.json(tasks);
@@ -237,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tasks", mockAuth, async (req, res) => {
+  app.post("/api/tasks", ensureAuthenticated, async (req, res) => {
     try {
       const validatedData = insertTaskSchema.parse({
         ...req.body,
@@ -260,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/tasks/:id/status", mockAuth, async (req, res) => {
+  app.put("/api/tasks/:id/status", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -284,7 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/tasks/:id/complete", mockAuth, async (req, res) => {
+  app.put("/api/tasks/:id/complete", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { completed } = req.body;
@@ -309,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Expenses routes
-  app.get("/api/expenses", mockAuth, async (req, res) => {
+  app.get("/api/expenses", ensureAuthenticated, async (req, res) => {
     try {
       const { month } = req.query;
       const expenses = await storage.getExpenses(month as string);
@@ -319,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/expenses", mockAuth, async (req, res) => {
+  app.post("/api/expenses", ensureAuthenticated, async (req, res) => {
     try {
       const validatedData = insertExpenseSchema.parse({
         ...req.body,
@@ -342,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/expenses/:id/status", mockAuth, async (req, res) => {
+  app.put("/api/expenses/:id/status", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -367,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pending items routes
-  app.get("/api/pending", mockAuth, async (req, res) => {
+  app.get("/api/pending", ensureAuthenticated, async (req, res) => {
     try {
       const pendingItems = await storage.getPendingItems(req.user.id);
       res.json(pendingItems);
@@ -376,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/accept-all", mockAuth, async (req, res) => {
+  app.post("/api/accept-all", ensureAuthenticated, async (req, res) => {
     try {
       const { itemTypes } = req.body;
       await storage.acceptAllPendingItems(req.user.id, itemTypes);
@@ -396,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Share links routes
-  app.post("/api/share-link", mockAuth, async (req, res) => {
+  app.post("/api/share-link", ensureAuthenticated, async (req, res) => {
     try {
       const linkId = nanoid(10);
       const expiresAt = new Date();
@@ -426,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notify-external", mockAuth, async (req, res) => {
+  app.post("/api/notify-external", ensureAuthenticated, async (req, res) => {
     try {
       // Log the action
       await storage.createActionLog({
@@ -555,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Teen permissions routes
-  app.get("/api/teen-permissions/:teenUserId", mockAuth, async (req, res) => {
+  app.get("/api/teen-permissions/:teenUserId", ensureAuthenticated, async (req, res) => {
     try {
       const teenUserId = parseInt(req.params.teenUserId);
       const permissions = await storage.getTeenPermissions(teenUserId);
@@ -580,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/teen-permissions", mockAuth, async (req, res) => {
+  app.post("/api/teen-permissions", ensureAuthenticated, async (req, res) => {
     try {
       // Only parents can create/modify teen permissions
       if (req.user.role === "teen") {
@@ -599,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/teen-permissions/:teenUserId", mockAuth, async (req, res) => {
+  app.put("/api/teen-permissions/:teenUserId", ensureAuthenticated, async (req, res) => {
     try {
       const teenUserId = parseInt(req.params.teenUserId);
       

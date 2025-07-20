@@ -9,10 +9,12 @@ import UserRoleSelector from "@/components/user-role-selector";
 import NotificationBadge from "@/components/notification-badge";
 import UserRequestHistoryModal from "@/components/user-request-history-modal";
 import TeenPermissionsModal from "@/components/teen-permissions-modal";
+import { AdBanner } from "@/components/ads/ad-banner";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Bell, History, Settings, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { BannerAdPosition } from "@capacitor-community/admob";
 
 type ViewType = "calendar" | "todo";
 
@@ -158,6 +160,11 @@ export default function Home() {
       <div className="pb-20">
         {currentView === "calendar" && <CalendarView />}
         {currentView === "todo" && <TodoView />}
+        
+        {/* Ad Banner - positioned above bottom navigation */}
+        <div className="fixed bottom-16 left-0 right-0 z-10">
+          <AdBanner position={BannerAdPosition.BOTTOM_CENTER} className="mx-4 mb-2" />
+        </div>
       </div>
 
       {/* Bottom Navigation */}
