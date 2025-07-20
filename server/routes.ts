@@ -71,6 +71,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Registration route
+  app.post("/api/register", async (req, res) => {
+    try {
+      const validated = insertUserSchema.parse(req.body);
+      const hashedPassword = await bcrypt.hash(validated.password, 10);
+      const user = await storage.createUser({ ...validated, password: hashedPassword });
+      // Log registration action
+      await storage.createActionLog({
+        userId: user.id,
+        action: "register",
+        details: `User registered: ${user.username}`,
+        ipAddress: getClientIP(req),
+      });
+      res.json({ user });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   // Calendar routes
   app.get("/api/calendar/assignments/:month", ensureAuthenticated, async (req, res) => {
     try {
