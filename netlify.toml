@@ -1,17 +1,9 @@
 [build]
   publish = "dist/public"
-  command = "npm run build:full"
-  functions = "dist/functions"
+  command = "npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_KEY,SESSION_SECRET"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/index/:splat"
-  status = 200
-  force = true
 
 [[redirects]]
   from = "/*"
