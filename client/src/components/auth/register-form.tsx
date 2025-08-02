@@ -103,14 +103,27 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         throw new Error(`Profile creation failed: ${profileError.message}`);
       }
 
-      // If family code is provided, join the family using the Edge Function
+      // If family code is provided, join the family directly
       if (userData.familyCode) {
-        const { data: joinData, error: joinError } = await supabase.functions.invoke('join_family', {
-          body: { familyCode: userData.familyCode }
-        });
+        // Find family by code
+        const { data: family, error: familyError } = await supabase
+          .from('families')
+          .select('id')
+          .eq('code', userData.familyCode)
+          .single();
 
-        if (joinError) {
-          throw new Error(`Failed to join family: ${joinError.message}`);
+        if (familyError || !family) {
+          throw new Error("Invalid family code. Please check and try again.");
+        }
+
+        // Update user's family_id
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ family_id: family.id })
+          .eq('id', authData.user.id);
+
+        if (updateError) {
+          throw new Error(`Failed to join family: ${updateError.message}`);
         }
       }
 

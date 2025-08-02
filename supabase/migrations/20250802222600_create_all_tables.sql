@@ -143,6 +143,9 @@ CREATE POLICY "Users can view their family" ON families
     id IN (SELECT family_id FROM users WHERE id = auth.uid()::text)
   );
 
+CREATE POLICY "Users can view families by code" ON families
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
 CREATE POLICY "Authenticated users can create families" ON families
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 

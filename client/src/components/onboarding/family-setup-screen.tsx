@@ -86,14 +86,43 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
         throw new Error("Invalid family code. Please check and try again.");
       }
 
-      // Update user's family_id
-      const { error: userError } = await supabase
+      // Check if user profile exists, create if it doesn't
+      const { data: existingUser, error: userCheckError } = await supabase
         .from('users')
-        .update({ family_id: family.id })
-        .eq('id', user.id);
+        .select('id, family_id')
+        .eq('id', user.id)
+        .single();
 
-      if (userError) {
-        throw new Error(`Failed to join family: ${userError.message}`);
+      if (userCheckError && userCheckError.code !== 'PGRST116') {
+        throw new Error(`Failed to check user profile: ${userCheckError.message}`);
+      }
+
+      // If user doesn't exist, create profile first
+      if (!existingUser) {
+        const { error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            username: user.username,
+            role: user.role,
+            family_id: family.id
+          });
+
+        if (createError) {
+          throw new Error(`Failed to create user profile: ${createError.message}`);
+        }
+      } else {
+        // Update existing user's family_id
+        const { error: userError } = await supabase
+          .from('users')
+          .update({ family_id: family.id })
+          .eq('id', user.id);
+
+        if (userError) {
+          throw new Error(`Failed to join family: ${userError.message}`);
+        }
       }
 
       return { success: true };
