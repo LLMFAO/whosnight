@@ -49,11 +49,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       
       // Get additional user profile data if needed
-      const { data: profile } = await supabase
-        .from('users')
-        .select('username, name, role, family_id')
-        .eq('id', supabaseUser.id)
-        .single();
+      // Handle case where user profile might not exist yet
+      let profile = null;
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .select('username, name, role, family_id')
+          .eq('id', supabaseUser.id)
+          .maybeSingle(); // Use maybeSingle to handle case where no row exists
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          // PGRST116 is "not found" error, which is expected for new users
+          console.warn('Profile query error:', profileError);
+        } else {
+          profile = profileData;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch user profile:', err);
+        // Continue without profile data - user might be in registration flow
+      }
       
       return {
         id: supabaseUser.id,
