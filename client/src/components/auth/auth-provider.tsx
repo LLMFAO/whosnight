@@ -1,11 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface User {
-  id: number;
-  username: string;
-  name: string;
-  role: string;
+  id: string;
+  email: string;
+  username?: string;
+  name?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -38,16 +41,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { data: userData, isLoading } = useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const response = await fetch("/api/me", {
-        credentials: "include",
-      });
+      const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
       
-      if (!response.ok) {
+      if (error || !supabaseUser) {
         throw new Error("Not authenticated");
       }
       
-      const data = await response.json();
-      return data.user;
+      // Get additional user profile data if needed
+      const { data: profile } = await supabase
+        .from('users')
+        .select('username, name, role')
+        .eq('id', supabaseUser.id)
+        .single();
+      
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email!,
+        username: profile?.username,
+        name: profile?.name,
+        role: profile?.role,
+      };
     },
     retry: false,
   });
@@ -61,18 +74,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [userData]);
 
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Refetch user data when signed in
+          queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          queryClient.clear();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Logout failed");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw new Error(error.message);
       }
-      
-      return response.json();
     },
     onSuccess: () => {
       setUser(null);

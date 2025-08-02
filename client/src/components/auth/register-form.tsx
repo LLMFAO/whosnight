@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useMutation } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 
 interface RegisterFormProps {
   onSuccess: (user: any) => void;
@@ -14,54 +15,81 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
   const [familyCode, setFamilyCode] = useState("");
   const [joinExistingFamily, setJoinExistingFamily] = useState(false);
 
   const registerMutation = useMutation({
-    mutationFn: async (userData: { username: string; password: string; name: string; role: string; familyCode?: string }) => {
-      // First register the user
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-        credentials: "include",
+    mutationFn: async (userData: { 
+      email: string; 
+      password: string; 
+      name: string; 
+      username: string;
+      role: string; 
+      familyCode?: string 
+    }) => {
+      // First, sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            name: userData.name,
+            username: userData.username,
+            role: userData.role,
+          }
+        }
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Registration failed");
+      if (authError) {
+        throw new Error(authError.message);
       }
 
-      const result = await response.json();
+      if (!authData.user) {
+        throw new Error("Registration failed");
+      }
 
-      // If family code is provided, join the family
-      if (userData.familyCode) {
-        const joinResponse = await fetch("/api/family/join", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ familyCode: userData.familyCode }),
-          credentials: "include",
+      // Insert user profile data into the users table
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: userData.email,
+          username: userData.username,
+          name: userData.name,
+          role: userData.role,
         });
 
-        if (!joinResponse.ok) {
-          const error = await joinResponse.json();
-          throw new Error(error.message || "Failed to join family");
+      if (profileError) {
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+      }
+
+      // If family code is provided, join the family using the Edge Function
+      if (userData.familyCode) {
+        const { data: joinData, error: joinError } = await supabase.functions.invoke('join_family', {
+          body: { familyCode: userData.familyCode }
+        });
+
+        if (joinError) {
+          throw new Error(`Failed to join family: ${joinError.message}`);
         }
       }
 
-      return result;
+      return {
+        id: authData.user.id,
+        email: authData.user.email!,
+        username: userData.username,
+        name: userData.name,
+        role: userData.role,
+      };
     },
-    onSuccess: (data) => {
-      onSuccess(data.user);
+    onSuccess: (userData) => {
+      onSuccess(userData);
     },
   });
 
@@ -73,9 +101,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     }
     
     registerMutation.mutate({
-      username,
+      email,
       password,
       name,
+      username,
       role,
       familyCode: joinExistingFamily ? familyCode : undefined
     });
@@ -116,6 +145,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               onChange={(e) => setName(e.target.value)}
               required
               disabled={registerMutation.isPending}
+              autoComplete="name"
             />
           </div>
           
@@ -128,6 +158,20 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               onChange={(e) => setUsername(e.target.value)}
               required
               disabled={registerMutation.isPending}
+              autoComplete="username"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={registerMutation.isPending}
+              autoComplete="email"
             />
           </div>
           
@@ -157,6 +201,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={registerMutation.isPending}
+              autoComplete="new-password"
             />
           </div>
           
@@ -169,6 +214,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={registerMutation.isPending}
+              autoComplete="new-password"
             />
           </div>
 

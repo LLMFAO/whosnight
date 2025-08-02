@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMutation } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 
 interface LoginFormProps {
   onSuccess: (user: any) => void;
@@ -12,35 +13,47 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(credentials),
-        credentials: "include",
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Login failed");
+      if (error) {
+        throw new Error(error.message);
       }
 
-      return response.json();
+      if (!data.user) {
+        throw new Error("Login failed");
+      }
+
+      // Get additional user profile data
+      const { data: profile } = await supabase
+        .from('users')
+        .select('username, name, role')
+        .eq('id', data.user.id)
+        .single();
+
+      return {
+        id: data.user.id,
+        email: data.user.email!,
+        username: profile?.username,
+        name: profile?.name,
+        role: profile?.role,
+      };
     },
-    onSuccess: (data) => {
-      onSuccess(data.user);
+    onSuccess: (userData) => {
+      onSuccess(userData);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate({ username, password });
+    loginMutation.mutate({ email, password });
   };
 
   return (
@@ -62,14 +75,15 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loginMutation.isPending}
+              autoComplete="email"
             />
           </div>
           
@@ -82,6 +96,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loginMutation.isPending}
+              autoComplete="current-password"
             />
           </div>
           
