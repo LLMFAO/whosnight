@@ -6,7 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 
 interface TeenPermissionsModalProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface TeenPermissions {
   canModifyAssignments: boolean;
   canAddEvents: boolean;
   canAddTasks: boolean;
+  canAddExpenses: boolean;
   isReadOnly: boolean;
   modifiedBy: number;
   modifiedAt: string;
@@ -32,10 +34,38 @@ export default function TeenPermissionsModal({
 }: TeenPermissionsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: permissions, isLoading } = useQuery({
-    queryKey: ['/api/teen-permissions', teenUserId],
-    enabled: open && teenUserId > 0,
+    queryKey: ['teen-permissions', teenUserId],
+    queryFn: async () => {
+      if (!user?.familyId || teenUserId <= 0) return null;
+      
+      const { data, error } = await supabase
+        .from("teen_permissions")
+        .select("*")
+        .eq("teen_user_id", teenUserId.toString())
+        .single();
+
+      if (error) {
+        // If no permissions exist yet, return default values
+        if (error.code === 'PGRST116') {
+          return {
+            teenUserId,
+            canModifyAssignments: false,
+            canAddEvents: false,
+            canAddTasks: false,
+            canAddExpenses: false,
+            isReadOnly: true,
+          };
+        }
+        console.error("Error fetching teen permissions:", error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: open && teenUserId > 0 && !!user?.familyId,
   });
 
   const [localPermissions, setLocalPermissions] = useState<Partial<TeenPermissions>>({
@@ -52,6 +82,7 @@ export default function TeenPermissionsModal({
         canModifyAssignments: permissions.canModifyAssignments || false,
         canAddEvents: permissions.canAddEvents || false,
         canAddTasks: permissions.canAddTasks || false,
+        canAddExpenses: permissions.canAddExpenses || false,
         isReadOnly: permissions.isReadOnly ?? true,
       });
     }
@@ -59,20 +90,56 @@ export default function TeenPermissionsModal({
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async (updatedPermissions: Partial<TeenPermissions>) => {
-      return await apiRequest("PUT", `/api/teen-permissions/${teenUserId}`, updatedPermissions);
+      if (!user?.id) throw new Error("User not authenticated");
+
+      const permissionData = {
+        teen_user_id: teenUserId.toString(),
+        can_modify_assignments: updatedPermissions.canModifyAssignments || false,
+        can_add_events: updatedPermissions.canAddEvents || false,
+        can_add_tasks: updatedPermissions.canAddTasks || false,
+        can_add_expenses: updatedPermissions.canAddExpenses || false,
+        is_read_only: updatedPermissions.isReadOnly ?? true,
+        modified_by: user.id,
+      };
+
+      // Use upsert to create or update permissions
+      const { data, error } = await supabase
+        .from("teen_permissions")
+        .upsert(permissionData, {
+          onConflict: "teen_user_id"
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Log the permission change
+      const { error: logError } = await supabase
+        .from("action_logs")
+        .insert({
+          userId: user.id,
+          action: "update_teen_permissions",
+          entityType: "teen_permissions",
+          entityId: data.id,
+          details: `Updated teen permissions for user ${teenUserId}`,
+        });
+
+      if (logError) console.warn("Failed to log permission change:", logError);
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/teen-permissions', teenUserId] });
+      queryClient.invalidateQueries({ queryKey: ['teen-permissions', teenUserId] });
       toast({
         title: "Permissions Updated",
         description: "Teen permissions have been successfully updated.",
       });
       onOpenChange(false);
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to update teen permissions.",
+        description: error.message || "Failed to update teen permissions.",
         variant: "destructive",
       });
     },

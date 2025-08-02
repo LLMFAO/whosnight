@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Clock, User, Undo2, AlertCircle } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChangeHistoryModalProps {
@@ -64,43 +65,107 @@ export default function ChangeHistoryModal({
 }: ChangeHistoryModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [undoingLogId, setUndoingLogId] = useState<number | null>(null);
-
-  // Get current user
-  const currentUser = localStorage.getItem('currentUser') || 'mom';
-  const currentUserId = currentUser === 'mom' ? 1 : (currentUser === 'dad' ? 2 : 3);
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['entity-history', entityType, entityId],
-    queryFn: () => fetch(`/api/history/${entityType}/${entityId}`, {
-      headers: { 'x-user': currentUser }
-    }).then(res => res.json()),
-    enabled: open,
+    queryFn: async () => {
+      if (!user?.familyId) return [];
+      
+      const { data, error } = await supabase
+        .from("action_logs")
+        .select("*")
+        .eq("entity_type", entityType)
+        .eq("entity_id", entityId)
+        .order("timestamp", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching action logs:", error);
+        return [];
+      }
+
+      return data || [];
+    },
+    enabled: open && !!user?.familyId,
   });
 
   // Get current assignment status
   const { data: currentAssignment } = useQuery({
     queryKey: ['current-assignment', entityType, entityId],
     queryFn: async () => {
-      if (entityType === 'calendar_assignment' && entityId > 0) {
-        const response = await fetch(`/api/calendar/assignment/${entityId}`, {
-          headers: { 'x-user': currentUser }
-        });
-        return response.ok ? response.json() : null;
+      if (!user?.familyId || entityType !== 'calendar_assignment' || entityId <= 0) {
+        return null;
       }
-      return null;
+      
+      const { data, error } = await supabase
+        .from("calendar_assignments")
+        .select("*")
+        .eq("id", entityId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching current assignment:", error);
+        return null;
+      }
+
+      return data;
     },
-    enabled: open && entityType === 'calendar_assignment' && entityId > 0,
+    enabled: open && entityType === 'calendar_assignment' && entityId > 0 && !!user?.familyId,
   });
 
   const undoMutation = useMutation({
     mutationFn: async (logId: number) => {
-      const response = await fetch(`/api/undo/${logId}`, {
-        method: 'POST',
-        headers: { 'x-user': currentUser }
-      });
-      if (!response.ok) throw new Error('Failed to undo change');
-      return response.json();
+      if (!user?.id) throw new Error("User not authenticated");
+
+      // Find the log entry to undo
+      const logToUndo = logs.find((log: ActionLog) => log.id === logId);
+      if (!logToUndo || !logToUndo.previousState) {
+        throw new Error("Cannot undo this action - no previous state available");
+      }
+
+      // Parse the previous state
+      let previousState;
+      try {
+        previousState = JSON.parse(logToUndo.previousState);
+      } catch (error) {
+        throw new Error("Invalid previous state data");
+      }
+
+      // Determine which table to update based on entity type
+      let tableName = "";
+      switch (logToUndo.entityType) {
+        case "calendar_assignment": tableName = "calendar_assignments"; break;
+        case "event": tableName = "events"; break;
+        case "task": tableName = "tasks"; break;
+        case "expense": tableName = "expenses"; break;
+        default: throw new Error(`Unsupported entity type: ${logToUndo.entityType}`);
+      }
+
+      // Restore the previous state
+      const { error: updateError } = await supabase
+        .from(tableName)
+        .update(previousState)
+        .eq("id", logToUndo.entityId);
+
+      if (updateError) throw updateError;
+
+      // Log the undo action
+      const { error: logError } = await supabase
+        .from("action_logs")
+        .insert({
+          userId: user.id,
+          action: "undone",
+          entityType: logToUndo.entityType,
+          entityId: logToUndo.entityId,
+          details: `Undone action: ${logToUndo.action}`,
+          previousState: null,
+          requestedBy: user.id,
+        });
+
+      if (logError) console.warn("Failed to log undo action:", logError);
+
+      return { success: true };
     },
     onSuccess: () => {
       toast({
@@ -108,7 +173,7 @@ export default function ChangeHistoryModal({
         description: "The change has been reverted to its previous state."
       });
       queryClient.invalidateQueries({ queryKey: ['entity-history'] });
-      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -130,7 +195,7 @@ export default function ChangeHistoryModal({
   };
 
   const canUndo = (log: ActionLog) => {
-    return log.requestedBy === currentUserId && 
+    return log.requestedBy === user?.id && 
            log.previousState && 
            log.action !== 'undone' &&
            !logs.some((l: ActionLog) => l.action === 'undone' && l.details.includes(log.action));
@@ -159,7 +224,7 @@ export default function ChangeHistoryModal({
       const creatorName = getUserName(createdBy);
       
       if (status === "pending") {
-        const needsApproval = createdBy !== currentUserId;
+        const needsApproval = createdBy !== user?.id;
         if (needsApproval) {
           return {
             text: `Pending approval from ${creatorName === "Mom" ? "Dad" : "Mom"}`,

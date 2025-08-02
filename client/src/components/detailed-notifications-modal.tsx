@@ -8,6 +8,7 @@ import { Calendar, Clock, DollarSign, CheckSquare, Check, X, User } from "lucide
 import { formatDisplayDate } from "@/lib/utils";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 import { useToast } from "@/hooks/use-toast";
 
 interface DetailedNotificationsModalProps {
@@ -27,6 +28,7 @@ export default function DetailedNotificationsModal({
 }: DetailedNotificationsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch action logs to get cancellation reasons
   const { data: actionLogs = [], error: actionLogsError } = useQuery({
@@ -55,18 +57,51 @@ export default function DetailedNotificationsModal({
 
   const acceptItemMutation = useMutation({
     mutationFn: async ({ itemType, itemId }: { itemType: string; itemId: number }) => {
-      const response = await fetch(`/api/pending/accept-item`, {
-        method: "POST",
-        body: JSON.stringify({ itemType, itemId }),
-        headers: { "Content-Type": "application/json" }
-      });
-      if (!response.ok) throw new Error("Failed to accept item");
-      return response.json();
+      if (!user?.id) throw new Error("User not authenticated");
+
+      // Update the item status to "confirmed" in Supabase
+      let tableName = "";
+      switch (itemType) {
+        case "assignment":
+          tableName = "calendar_assignments";
+          break;
+        case "event":
+          tableName = "events";
+          break;
+        case "task":
+          tableName = "tasks";
+          break;
+        default:
+          throw new Error(`Unknown item type: ${itemType}`);
+      }
+
+      const { error } = await supabase
+        .from(tableName)
+        .update({ status: "confirmed" })
+        .eq("id", itemId);
+
+      if (error) throw error;
+
+      // Log the acceptance action
+      const { error: logError } = await supabase
+        .from("action_logs")
+        .insert({
+          userId: user.id,
+          action: `accept_${itemType}`,
+          entityType: itemType,
+          entityId: itemId,
+          details: `Accepted ${itemType} with ID ${itemId}`,
+        });
+
+      if (logError) console.warn("Failed to log acceptance:", logError);
+
+      return { itemType, itemId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["pending"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast({
         title: "Item accepted",
         description: "The change has been confirmed.",
@@ -83,23 +118,71 @@ export default function DetailedNotificationsModal({
 
   const acceptAllMutation = useMutation({
     mutationFn: async () => {
-      const itemTypes = [];
-      if (pendingItems.assignments.length > 0) itemTypes.push("assignments");
-      if (pendingItems.events.length > 0) itemTypes.push("events");
-      if (pendingItems.tasks.length > 0) itemTypes.push("tasks");
+      if (!user?.id) throw new Error("User not authenticated");
 
-      const response = await fetch(`/api/pending/accept-all`, {
-        method: "POST",
-        body: JSON.stringify({ itemTypes }),
-        headers: { "Content-Type": "application/json" }
-      });
-      if (!response.ok) throw new Error("Failed to accept all items");
-      return response.json();
+      const updates = [];
+
+      // Update all pending assignments
+      if (pendingItems.assignments.length > 0) {
+        const assignmentIds = pendingItems.assignments.map((a: any) => a.id);
+        updates.push(
+          supabase
+            .from("calendar_assignments")
+            .update({ status: "confirmed" })
+            .in("id", assignmentIds)
+        );
+      }
+
+      // Update all pending events
+      if (pendingItems.events.length > 0) {
+        const eventIds = pendingItems.events.map((e: any) => e.id);
+        updates.push(
+          supabase
+            .from("events")
+            .update({ status: "confirmed" })
+            .in("id", eventIds)
+        );
+      }
+
+      // Update all pending tasks
+      if (pendingItems.tasks.length > 0) {
+        const taskIds = pendingItems.tasks.map((t: any) => t.id);
+        updates.push(
+          supabase
+            .from("tasks")
+            .update({ status: "confirmed" })
+            .in("id", taskIds)
+        );
+      }
+
+      // Execute all updates
+      const results = await Promise.all(updates);
+      
+      // Check for errors
+      for (const result of results) {
+        if (result.error) throw result.error;
+      }
+
+      // Log the bulk acceptance
+      const { error: logError } = await supabase
+        .from("action_logs")
+        .insert({
+          userId: user.id,
+          action: "accept_all_pending",
+          entityType: "bulk",
+          entityId: null,
+          details: `Accepted all pending items: ${pendingItems.assignments.length} assignments, ${pendingItems.events.length} events, ${pendingItems.tasks.length} tasks`,
+        });
+
+      if (logError) console.warn("Failed to log bulk acceptance:", logError);
+
+      return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["pending"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast({
         title: "All items accepted",
         description: "All pending changes have been confirmed.",
@@ -218,9 +301,7 @@ export default function DetailedNotificationsModal({
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingItems.events.map((event: any) => (
-                  <div key={event.id} className={`p-3 border rounded-lg ${
-                    event.status === 'cancelled' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
-                  }`}>
+                  <div key={event.id} className={`p-3 border rounded-lg ${event.status === 'cancelled' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
                     <div className="space-y-3">
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2">

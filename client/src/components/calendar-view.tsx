@@ -106,8 +106,8 @@ export default function CalendarView() {
           .from("calendar_assignments")
           .upsert({
             date: data.date,
-            assignedTo: data.assignedTo,
-            createdBy: user.id,
+            assigned_to: data.assignedTo,
+            created_by: user.id,
             status: "pending",
           })
           .select()
@@ -141,11 +141,11 @@ export default function CalendarView() {
         if (newAssignment.assignedTo) {
           return [...filteredAssignments, {
             date: newAssignment.date,
-            assignedTo: newAssignment.assignedTo,
+            assigned_to: newAssignment.assignedTo,
             status: "pending",
             id: Date.now(), // temporary ID
-            createdBy: user?.id,
-            createdAt: new Date().toISOString()
+            created_by: user?.id,
+            created_at: new Date().toISOString()
           }];
         }
         return filteredAssignments;
@@ -169,8 +169,8 @@ export default function CalendarView() {
   const calendarDays = getCalendarDays(currentMonth);
   const assignmentMap = new Map(assignmentsArray.map((a: any) => [a.date, a]));
 
-  const momDaysCount = assignmentsArray.filter((a: any) => a.assignedTo === "mom").length;
-  const dadDaysCount = assignmentsArray.filter((a: any) => a.assignedTo === "dad").length;
+  const momDaysCount = assignmentsArray.filter((a: any) => a.assigned_to === "mom").length;
+  const dadDaysCount = assignmentsArray.filter((a: any) => a.assigned_to === "dad").length;
 
   const handleDateSelect = (date: Date, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return;
@@ -195,7 +195,7 @@ export default function CalendarView() {
     const baseClasses = "calendar-day touch-target h-12 rounded-lg flex items-center justify-center text-sm font-medium relative";
 
     if (assignment) {
-      const styleClass = getAssignmentStyle(assignment.assignedTo, assignment.status);
+      const styleClass = getAssignmentStyle(assignment.assigned_to, assignment.status);
       return `${baseClasses} ${styleClass}`;
     }
 
