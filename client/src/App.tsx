@@ -25,14 +25,24 @@ function ProtectedRoute({ component: Component, ...props }: any) {
     return <AuthPage />;
   }
   
+  // Debug logging to understand user profile data
+  console.log('User profile data:', user);
+  console.log('User name:', user?.name);
+  console.log('User role:', user?.role);
+  console.log('User familyId:', user?.familyId);
+  
   // Check if user needs onboarding based on their profile completeness
   // If user has name, role, and familyId, they've completed onboarding
   const hasCompleteProfile = user && user.name && user.role && user.familyId;
   
+  console.log('Has complete profile:', hasCompleteProfile);
+  
   if (!hasCompleteProfile && user) {
+    console.log('Redirecting to onboarding - missing profile data');
     return <OnboardingPage />;
   }
   
+  console.log('User has complete profile, showing main app');
   return <Component {...props} />;
 }
 

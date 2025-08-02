@@ -51,7 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Get additional user profile data if needed
       const { data: profile } = await supabase
         .from('users')
-        .select('username, name, role, familyId')
+        .select('username, name, role, family_id')
         .eq('id', supabaseUser.id)
         .single();
       
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         username: profile?.username,
         name: profile?.name,
         role: profile?.role,
-        familyId: profile?.familyId,
+        familyId: profile?.family_id,
       };
     },
     retry: false,
