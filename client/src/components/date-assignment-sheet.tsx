@@ -79,7 +79,7 @@ export default function DateAssignmentSheet({
             description: data.description || null,
             children: data.children || [],
             date: data.date,
-            createdBy: user.id,
+            created_by: user.id,
             status: "pending",
           })
           .select()
@@ -114,10 +114,10 @@ export default function DateAssignmentSheet({
       const { error: logError } = await supabase
         .from("action_logs")
         .insert({
-          userId: user.id,
+          user_id: user.id,
           action: "cancel_event",
-          entityType: "event",
-          entityId: data.eventId,
+          entity_type: "event",
+          entity_id: data.eventId,
           details: `Cancelled event with reason: ${data.reason}`,
         });
 
