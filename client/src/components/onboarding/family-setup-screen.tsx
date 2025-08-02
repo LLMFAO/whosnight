@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, Users, Plus, AlertCircle } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/auth-provider";
+import { supabase } from "@/lib/supabaseClient";
 
 interface FamilySetupScreenProps {
   onNext: () => void;
@@ -24,19 +25,39 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
 
   const createFamilyMutation = useMutation({
     mutationFn: async (data: { familyName?: string }) => {
-      const response = await fetch("/api/family/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to create family");
+      if (!user) {
+        throw new Error("User not authenticated");
       }
-      
-      return response.json();
+
+      // Generate a unique family code
+      const familyCode = Math.random().toString(36).substring(2, 8).toUpperCase() + 
+                        '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      // Create family in Supabase
+      const { data: family, error: familyError } = await supabase
+        .from('families')
+        .insert({
+          name: data.familyName || null,
+          code: familyCode,
+        })
+        .select()
+        .single();
+
+      if (familyError) {
+        throw new Error(`Failed to create family: ${familyError.message}`);
+      }
+
+      // Update user's family_id
+      const { error: userError } = await supabase
+        .from('users')
+        .update({ family_id: family.id })
+        .eq('id', user.id);
+
+      if (userError) {
+        throw new Error(`Failed to join family: ${userError.message}`);
+      }
+
+      return { familyCode: family.code };
     },
     onSuccess: (data) => {
       setFamilyCode(data.familyCode);
@@ -44,28 +65,38 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
       setErrorMessage("");
     },
     onError: (error) => {
-      setErrorMessage("Failed to create family. Please try again.");
+      setErrorMessage(error.message || "Failed to create family. Please try again.");
     },
   });
 
   const joinFamilyMutation = useMutation({
     mutationFn: async (data: { familyCode: string }) => {
-      const response = await fetch("/api/family/join", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Invalid family code. Please check and try again.");
-        }
-        throw new Error("Failed to join family");
+      if (!user) {
+        throw new Error("User not authenticated");
       }
-      
-      return response.json();
+
+      // Find family by code
+      const { data: family, error: familyError } = await supabase
+        .from('families')
+        .select('id')
+        .eq('code', data.familyCode)
+        .single();
+
+      if (familyError || !family) {
+        throw new Error("Invalid family code. Please check and try again.");
+      }
+
+      // Update user's family_id
+      const { error: userError } = await supabase
+        .from('users')
+        .update({ family_id: family.id })
+        .eq('id', user.id);
+
+      if (userError) {
+        throw new Error(`Failed to join family: ${userError.message}`);
+      }
+
+      return { success: true };
     },
     onSuccess: () => {
       setFamilyCreatedOrJoined(true);
@@ -267,7 +298,7 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
                 <Label htmlFor="familyCode">Family Code</Label>
                 <Input
                   id="familyCode"
-                  placeholder="e.g., ABC-123-XYZ"
+                  placeholder="e.g., ABC123-XYZ789"
                   value={familyCodeInput}
                   onChange={(e) => setFamilyCodeInput(e.target.value)}
                   className="text-center text-lg tracking-wider"
