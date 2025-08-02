@@ -218,7 +218,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                   <div className="flex-1">
                     <h4 className="text-sm font-medium">Invite Family Members</h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Share the app with your spouse, teens, or other family members to coordinate together.
+                      Share the app with your coparent, teens, or other family members to coordinate together.
                     </p>
                     <Button
                       variant="secondary"
