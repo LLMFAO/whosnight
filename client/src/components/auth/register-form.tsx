@@ -59,7 +59,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         .from('users')
         .insert({
           id: authData.user.id,
-          email: userData.email,
           username: userData.username,
           name: userData.name,
           role: userData.role,
