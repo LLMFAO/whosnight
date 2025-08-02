@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { getCalendarDays, formatDate, formatMonth, getAssignmentStyle, formatDisplayDate } from "@/lib/utils";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 import DateAssignmentSheet from "./date-assignment-sheet";
 
 export default function CalendarView() {
@@ -13,6 +14,7 @@ export default function CalendarView() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAssignmentSheet, setShowAssignmentSheet] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const monthString = formatMonth(currentMonth);
 
@@ -27,50 +29,84 @@ export default function CalendarView() {
   const assignmentsArray = Array.isArray(assignments) ? assignments : [];
   
 
-
   // Fetch events for the current month to show indicators
   const { data: monthEvents = [] } = useQuery({
-    queryKey: ["/api/events", monthString],
+    queryKey: ["events", monthString],
     queryFn: async () => {
-      const calendarDays = getCalendarDays(currentMonth);
-      const allEvents: any[] = [];
+      if (!user?.familyId) return [];
       
-      // Fetch events for all days in the current month
-      for (const { date, isCurrentMonth } of calendarDays) {
-        if (isCurrentMonth) {
-          const dateStr = formatDate(date);
-          try {
-            const response = await fetch(`/api/events/${dateStr}`);
-            if (response.ok) {
-              const events = await response.json();
-              if (Array.isArray(events)) {
-                allEvents.push(...events);
-              }
-            }
-          } catch (error) {
-            // Silently handle fetch errors to avoid console spam
-          }
-        }
+      const calendarDays = getCalendarDays(currentMonth);
+      const startDate = calendarDays[0].date;
+      const endDate = calendarDays[calendarDays.length - 1].date;
+      
+      const { data: events, error } = await supabase
+        .from("events")
+        .select("*")
+        .gte("date", formatDate(startDate))
+        .lte("date", formatDate(endDate))
+        .order("date", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching events:", error);
+        return [];
       }
-      return allEvents;
+
+      return events || [];
     },
+    enabled: !!user?.familyId,
   });
 
   const { data: eventsForSelectedDate = [] } = useQuery({
-    queryKey: ["/api/events", selectedDate ? formatDate(selectedDate) : ""],
+    queryKey: ["events", selectedDate ? formatDate(selectedDate) : ""],
     queryFn: async () => {
-      if (!selectedDate) return [];
+      if (!selectedDate || !user?.familyId) return [];
+      
       const dateStr = formatDate(selectedDate);
-      const response = await fetch(`/api/events/${dateStr}`);
-      if (!response.ok) return [];
-      return response.json();
+      const { data: events, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("date", dateStr)
+        .order("time", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching events for date:", error);
+        return [];
+      }
+
+      return events || [];
     },
-    enabled: !!selectedDate,
+    enabled: !!selectedDate && !!user?.familyId,
   });
 
   const assignmentMutation = useMutation({
     mutationFn: async (data: { date: string; assignedTo: string | null }) => {
-      return await apiRequest("POST", "/api/calendar/assignments", data);
+      if (!user?.id) throw new Error("User not authenticated");
+
+      // Use Supabase for calendar assignments
+      if (data.assignedTo) {
+        const { data: assignment, error } = await supabase
+          .from("calendar_assignments")
+          .upsert({
+            date: data.date,
+            assignedTo: data.assignedTo,
+            createdBy: user.id,
+            status: "pending",
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return assignment;
+      } else {
+        // Clear assignment
+        const { error } = await supabase
+          .from("calendar_assignments")
+          .delete()
+          .eq("date", data.date);
+
+        if (error) throw error;
+        return null;
+      }
     },
     onMutate: async (newAssignment) => {
       // Cancel any outgoing refetches
@@ -90,7 +126,7 @@ export default function CalendarView() {
             assignedTo: newAssignment.assignedTo,
             status: "pending",
             id: Date.now(), // temporary ID
-            createdBy: 1,
+            createdBy: user?.id,
             createdAt: new Date().toISOString()
           }];
         }

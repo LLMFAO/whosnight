@@ -47,11 +47,33 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       });
 
       if (authError) {
+        // Handle specific Supabase Auth errors
+        if (authError.message.includes('User already registered')) {
+          throw new Error('An account with this email already exists. Please sign in instead.');
+        }
         throw new Error(authError.message);
       }
 
       if (!authData.user) {
         throw new Error("Registration failed");
+      }
+
+      // Check if user profile already exists (in case of duplicate registration attempts)
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (existingUser) {
+        // User profile already exists, just return the user data
+        return {
+          id: authData.user.id,
+          email: authData.user.email!,
+          username: userData.username,
+          name: userData.name,
+          role: userData.role,
+        };
       }
 
       // Insert user profile data into the users table
@@ -66,6 +88,18 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         });
 
       if (profileError) {
+        // Handle duplicate key errors with user-friendly messages
+        if (profileError.code === '23505') { // PostgreSQL unique constraint violation
+          if (profileError.message.includes('users_new_pkey') || profileError.message.includes('users_pkey')) {
+            throw new Error('An account with this email already exists. Please sign in instead.');
+          }
+          if (profileError.message.includes('username')) {
+            throw new Error('This username is already taken. Please choose a different username.');
+          }
+          if (profileError.message.includes('email')) {
+            throw new Error('An account with this email already exists. Please sign in instead.');
+          }
+        }
         throw new Error(`Profile creation failed: ${profileError.message}`);
       }
 

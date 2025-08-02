@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 import ChangeHistoryModal from "./change-history-modal";
 
 interface DateAssignmentSheetProps {
@@ -45,18 +46,52 @@ export default function DateAssignmentSheet({
     children: [] as string[],
   });
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const eventMutation = useMutation({
     mutationFn: async (data: any) => {
+      if (!user?.id) throw new Error("User not authenticated");
+
       if (editingEvent) {
-        return await apiRequest("PUT", `/api/events/${editingEvent.id}`, data);
+        // Update existing event
+        const { error } = await supabase
+          .from("events")
+          .update({
+            name: data.name,
+            time: data.time || null,
+            location: data.location || null,
+            description: data.description || null,
+            children: data.children || [],
+            date: data.date,
+          })
+          .eq("id", editingEvent.id);
+
+        if (error) throw error;
+        return { id: editingEvent.id, ...data };
       } else {
-        return await apiRequest("POST", "/api/events", data);
+        // Create new event
+        const { data: newEvent, error } = await supabase
+          .from("events")
+          .insert({
+            name: data.name,
+            time: data.time || null,
+            location: data.location || null,
+            description: data.description || null,
+            children: data.children || [],
+            date: data.date,
+            createdBy: user.id,
+            status: "pending",
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return newEvent;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["pending"] });
       setShowEventForm(false);
       setEditingEvent(null);
       setEventForm({ name: "", time: "", location: "", description: "", children: [] });
@@ -65,11 +100,34 @@ export default function DateAssignmentSheet({
 
   const deleteEventMutation = useMutation({
     mutationFn: async (data: { eventId: number; reason: string }) => {
-      return await apiRequest("DELETE", `/api/events/${data.eventId}`, { reason: data.reason });
+      if (!user?.id) throw new Error("User not authenticated");
+
+      // Update event status to cancelled instead of deleting
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "cancelled" })
+        .eq("id", data.eventId);
+
+      if (error) throw error;
+
+      // Log the cancellation action
+      const { error: logError } = await supabase
+        .from("action_logs")
+        .insert({
+          userId: user.id,
+          action: "cancel_event",
+          entityType: "event",
+          entityId: data.eventId,
+          details: `Cancelled event with reason: ${data.reason}`,
+        });
+
+      if (logError) console.warn("Failed to log cancellation:", logError);
+      
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["pending"] });
       setShowCancelForm(false);
       setCancellingEvent(null);
       setCancelReason("");
