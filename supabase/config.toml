@@ -16,7 +16,6 @@ extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-enabled = true
 # Port to use for the local database URL.
 port = 54322
 # Port used by db diff command to initialize the shadow database.
@@ -104,11 +103,6 @@ template = "Your code is {{ .Code }} ."
 # Controls the minimum amount of time that must pass before sending another sms otp.
 max_frequency = "1m0s"
 
-# Use pre-defined map of claims
-[auth.jwt]
-[auth.jwt.template]
-claims_json = "{}"
-
 # Hook to run custom code when a user signs up. HTTP request to the provided webhook URL.
 [auth.hook.custom_access_token]
 enabled = false
@@ -135,18 +129,10 @@ inspector_port = 8083
 enabled = false
 port = 54327
 vector_port = 54328
-# Configure one of the supported log levels: `trace`, `debug`, `info`, `warn`, `error`.
-# Configure log level for analytics queries.
-gql_query_log_level = "error"
-# Configure log level for analytics ingestion endpoints.
-gql_ingestion_log_level = "error"
-# Configure log level for analytics background functions.
-gql_background_log_level = "error"
 
 [functions]
 # Configure one of the supported request policies: `oneshot`, `per_worker`.
 # Use `oneshot` for hot reload, or `per_worker` for load testing.
-policy = "oneshot"
 
 [functions.import_map]
 # Path to import map file

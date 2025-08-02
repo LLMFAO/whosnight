@@ -19,26 +19,44 @@ export default function CalendarView() {
   const monthString = formatMonth(currentMonth);
 
   const { data: assignments = [] } = useQuery({
-    queryKey: ["/api/calendar/assignments", monthString],
-    queryFn: () => fetch(`/api/calendar/assignments/${monthString}`, {
-      credentials: "include"
-    }).then(res => res.json()),
+    queryKey: ["calendar-assignments", monthString],
+    queryFn: async () => {
+      if (!user?.familyId) return [];
+
+      const calendarDays = getCalendarDays(currentMonth);
+      const startDate = calendarDays[0].date;
+      const endDate = calendarDays[calendarDays.length - 1].date;
+
+      const { data: assignments, error } = await supabase
+        .from("calendar_assignments")
+        .select("*")
+        .gte("date", formatDate(startDate))
+        .lte("date", formatDate(endDate))
+        .order("date", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching assignments:", error);
+        return [];
+      }
+
+      return assignments || [];
+    },
+    enabled: !!user?.familyId,
   });
-  
+
   // Ensure assignments is always an array
   const assignmentsArray = Array.isArray(assignments) ? assignments : [];
-  
 
   // Fetch events for the current month to show indicators
   const { data: monthEvents = [] } = useQuery({
     queryKey: ["events", monthString],
     queryFn: async () => {
       if (!user?.familyId) return [];
-      
+
       const calendarDays = getCalendarDays(currentMonth);
       const startDate = calendarDays[0].date;
       const endDate = calendarDays[calendarDays.length - 1].date;
-      
+
       const { data: events, error } = await supabase
         .from("events")
         .select("*")
@@ -60,7 +78,7 @@ export default function CalendarView() {
     queryKey: ["events", selectedDate ? formatDate(selectedDate) : ""],
     queryFn: async () => {
       if (!selectedDate || !user?.familyId) return [];
-      
+
       const dateStr = formatDate(selectedDate);
       const { data: events, error } = await supabase
         .from("events")
@@ -110,16 +128,16 @@ export default function CalendarView() {
     },
     onMutate: async (newAssignment) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["/api/calendar/assignments", monthString] });
-      
+      await queryClient.cancelQueries({ queryKey: ["calendar-assignments", monthString] });
+
       // Snapshot the previous value
-      const previousAssignments = queryClient.getQueryData(["/api/calendar/assignments", monthString]);
-      
+      const previousAssignments = queryClient.getQueryData(["calendar-assignments", monthString]);
+
       // Optimistically update to the new value
-      queryClient.setQueryData(["/api/calendar/assignments", monthString], (old: any[]) => {
+      queryClient.setQueryData(["calendar-assignments", monthString], (old: any[]) => {
         const existingAssignments = old || [];
         const filteredAssignments = existingAssignments.filter((a: any) => a.date !== newAssignment.date);
-        
+
         if (newAssignment.assignedTo) {
           return [...filteredAssignments, {
             date: newAssignment.date,
@@ -132,18 +150,18 @@ export default function CalendarView() {
         }
         return filteredAssignments;
       });
-      
+
       return { previousAssignments };
     },
     onError: (err, newAssignment, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(["/api/calendar/assignments", monthString], context?.previousAssignments);
+      queryClient.setQueryData(["calendar-assignments", monthString], context?.previousAssignments);
     },
     onSuccess: () => {
       // Invalidate queries to get the real data from server
-      queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments", monthString] });
-      queryClient.invalidateQueries({ queryKey: ["/api/calendar/assignments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-assignments", monthString] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["pending"] });
       setShowAssignmentSheet(false);
     },
   });
@@ -175,12 +193,12 @@ export default function CalendarView() {
 
     const assignment = assignmentMap.get(formatDate(date));
     const baseClasses = "calendar-day touch-target h-12 rounded-lg flex items-center justify-center text-sm font-medium relative";
-    
+
     if (assignment) {
       const styleClass = getAssignmentStyle(assignment.assignedTo, assignment.status);
       return `${baseClasses} ${styleClass}`;
     }
-    
+
     return `${baseClasses} unassigned-day`;
   };
 
@@ -214,7 +232,7 @@ export default function CalendarView() {
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
-        
+
         {/* Parent Days Summary */}
         <div className="px-4 pb-4">
           <div className="bg-muted rounded-xl p-3 flex justify-between items-center">
@@ -240,7 +258,7 @@ export default function CalendarView() {
             </div>
           ))}
         </div>
-        
+
         {/* Calendar Days */}
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.map(({ date, isCurrentMonth }, index) => (
