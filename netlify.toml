@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--include=dev"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_KEY,DATABASE_URL,SESSION_SECRET"
 
 [[redirects]]
   from = "/*"
