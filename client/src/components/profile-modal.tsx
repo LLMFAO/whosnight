@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Copy, Users, LogOut, Settings } from "lucide-react";
+import { Copy, Users, LogOut, Settings, Share, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import TeenPermissionsModal from "./teen-permissions-modal";
 
@@ -73,12 +73,49 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
     }
   };
 
+  const handleInviteFamilyMember = async () => {
+    if (!familyData?.code) return;
+
+    const shareMessage = `Join our family on Who's Night! 
+
+Use family code: ${familyData.code}
+
+Download the app: https://whosnight.netlify.app
+
+Who's Night helps families coordinate schedules, tasks, and responsibilities together.`;
+
+    try {
+      // Try to use native share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: "Join our family on Who's Night!",
+          text: shareMessage,
+          url: "https://whosnight.netlify.app"
+        });
+      } else {
+        // Fallback to copying to clipboard
+        await navigator.clipboard.writeText(shareMessage);
+        toast({
+          title: "Invitation copied!",
+          description: "Share this message with your family member.",
+        });
+      }
+    } catch (error) {
+      // If both fail, show the message in a toast
+      toast({
+        title: "Share this with your family member:",
+        description: shareMessage,
+        duration: 10000,
+      });
+    }
+  };
+
   const isParent = user?.role === "mom" || user?.role === "dad";
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md mx-4">
+        <DialogContent className="max-w-md mx-4 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -136,10 +173,22 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
             {/* Family Members */}
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Family Members
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Family Members ({familyMembers?.length || 0})
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInviteFamilyMember}
+                  className="h-8 px-3"
+                >
+                  <UserPlus className="h-3 w-3 mr-1" />
+                  Invite
+                </Button>
+              </div>
+              
               <div className="space-y-2">
                 {familyMembers?.map((member) => (
                   <div key={member.id} className="flex items-center justify-between">
@@ -152,6 +201,36 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     </Badge>
                   </div>
                 ))}
+                
+                {(!familyMembers || familyMembers.length === 0) && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No other family members yet</p>
+                    <p className="text-xs">Use the invite button to add family members</p>
+                  </div>
+                )}
+              </div>
+            
+              {/* Invite Family Member Section */}
+              <div className="bg-muted/50 rounded-lg p-3 mt-3">
+                <div className="flex items-start gap-3">
+                  <Share className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium">Invite Family Members</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Share the app with your spouse, teens, or other family members to coordinate together.
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleInviteFamilyMember}
+                      className="mt-2 w-full"
+                    >
+                      <Share className="h-3 w-3 mr-2" />
+                      Share Who's Night
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 
