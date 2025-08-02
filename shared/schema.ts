@@ -10,19 +10,20 @@ export const families = pgTable("families", {
 });
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(), // Supabase Auth UUID
+  email: text("email").notNull().unique(), // Email for Supabase Auth
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull(), // "mom", "dad", "teen", or "caretaker"
   familyId: integer("family_id").references(() => families.id), // Links to the families table
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const calendarAssignments = pgTable("calendar_assignments", {
   id: serial("id").primaryKey(),
   date: text("date").notNull(), // YYYY-MM-DD format
   assignedTo: text("assigned_to"), // "mom", "dad", or null
-  createdBy: integer("created_by").notNull(),
+  createdBy: text("created_by").notNull(), // Changed to text for UUID
   status: text("status").notNull().default("pending"), // "pending", "confirmed"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -35,7 +36,7 @@ export const events = pgTable("events", {
   location: text("location"),
   description: text("description"),
   children: text("children").array().default([]),
-  createdBy: integer("created_by").notNull(),
+  createdBy: text("created_by").notNull(), // Changed to text for UUID
   status: text("status").notNull().default("pending"), // "pending", "confirmed"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -47,7 +48,7 @@ export const tasks = pgTable("tasks", {
   dueDate: text("due_date"), // YYYY-MM-DD format
   assignedTo: text("assigned_to").notNull(), // "mom" or "dad"
   completed: boolean("completed").default(false).notNull(),
-  createdBy: integer("created_by").notNull(),
+  createdBy: text("created_by").notNull(), // Changed to text for UUID
   status: text("status").notNull().default("pending"), // "pending", "confirmed"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -61,21 +62,21 @@ export const expenses = pgTable("expenses", {
   paidBy: text("paid_by").notNull(), // "mom" or "dad"
   description: text("description"),
   hasReceipt: boolean("has_receipt").default(false).notNull(),
-  createdBy: integer("created_by").notNull(),
+  createdBy: text("created_by").notNull(), // Changed to text for UUID
   status: text("status").notNull().default("pending"), // "pending", "confirmed"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const actionLogs = pgTable("action_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: text("user_id").notNull(), // Changed to text for UUID
   action: text("action").notNull(), // "created", "updated", "deleted", "approved", "rejected", "undone"
   entityType: text("entity_type"), // "assignment", "event", "task", "expense" - nullable for backward compatibility
   entityId: integer("entity_id"), // nullable for backward compatibility
   details: text("details").notNull(), // JSON string with change details
   previousState: text("previous_state"), // JSON string with previous state for undo
-  requestedBy: integer("requested_by"), // Who originally requested this change
-  approvedBy: integer("approved_by"), // Who approved this change
+  requestedBy: text("requested_by"), // Changed to text for UUID - Who originally requested this change
+  approvedBy: text("approved_by"), // Changed to text for UUID - Who approved this change
   ipAddress: text("ip_address"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
@@ -83,7 +84,7 @@ export const actionLogs = pgTable("action_logs", {
 export const shareLinks = pgTable("share_links", {
   id: serial("id").primaryKey(),
   linkId: text("link_id").notNull().unique(),
-  createdBy: integer("created_by").notNull(),
+  createdBy: text("created_by").notNull(), // Changed to text for UUID
   message: text("message").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
@@ -91,13 +92,13 @@ export const shareLinks = pgTable("share_links", {
 
 export const teenPermissions = pgTable("teen_permissions", {
   id: serial("id").primaryKey(),
-  teenUserId: integer("teen_user_id").notNull(),
+  teenUserId: text("teen_user_id").notNull(), // Changed to text for UUID
   canModifyAssignments: boolean("can_modify_assignments").default(false),
   canAddEvents: boolean("can_add_events").default(false),
   canAddTasks: boolean("can_add_tasks").default(false),
   canAddExpenses: boolean("can_add_expenses").default(false), // Added this line
   isReadOnly: boolean("is_read_only").default(true),
-  modifiedBy: integer("modified_by").notNull(), // parent who set permissions
+  modifiedBy: text("modified_by").notNull(), // Changed to text for UUID - parent who set permissions
   modifiedAt: timestamp("modified_at").defaultNow().notNull(),
 });
 
@@ -108,7 +109,7 @@ export const insertFamilySchema = createInsertSchema(families).omit({
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
+  createdAt: true,
 });
 
 export const insertCalendarAssignmentSchema = createInsertSchema(calendarAssignments).omit({
