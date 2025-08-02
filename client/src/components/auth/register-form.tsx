@@ -58,22 +58,23 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         throw new Error("Registration failed");
       }
 
-      // Check if user profile already exists (in case of duplicate registration attempts)
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', authData.user.id)
-        .single();
+      let familyId = null;
+      
+      // If family code is provided, join the family directly
+      if (userData.familyCode) {
+        // Find family by code (trim and normalize)
+        const normalizedFamilyCode = userData.familyCode.trim().toUpperCase();
+        const { data: family, error: familyError } = await supabase
+          .from('families')
+          .select('id')
+          .eq('code', normalizedFamilyCode)
+          .single();
 
-      if (existingUser) {
-        // User profile already exists, just return the user data
-        return {
-          id: authData.user.id,
-          email: authData.user.email!,
-          username: userData.username,
-          name: userData.name,
-          role: userData.role,
-        };
+        if (familyError || !family) {
+          throw new Error("Invalid family code. Please check and try again.");
+        }
+        
+        familyId = family.id;
       }
 
       // Insert user profile data into the users table
@@ -85,6 +86,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           username: userData.username,
           name: userData.name,
           role: userData.role,
+          family_id: familyId // Set family_id during initial creation if joining family
         });
 
       if (profileError) {
@@ -103,36 +105,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         throw new Error(`Profile creation failed: ${profileError.message}`);
       }
 
-      // If family code is provided, join the family directly
-      if (userData.familyCode) {
-        // Find family by code
-        const { data: family, error: familyError } = await supabase
-          .from('families')
-          .select('id')
-          .eq('code', userData.familyCode)
-          .single();
-
-        if (familyError || !family) {
-          throw new Error("Invalid family code. Please check and try again.");
-        }
-
-        // Update user's family_id
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ family_id: family.id })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          throw new Error(`Failed to join family: ${updateError.message}`);
-        }
-      }
-
       return {
         id: authData.user.id,
         email: authData.user.email!,
         username: userData.username,
         name: userData.name,
         role: userData.role,
+        familyId: familyId // Return familyId so App.tsx knows user has joined a family
       };
     },
     onSuccess: (userData) => {

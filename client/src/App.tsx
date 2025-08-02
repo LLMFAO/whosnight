@@ -33,7 +33,8 @@ function ProtectedRoute({ component: Component, ...props }: any) {
   
   // Check if user needs onboarding based on their profile completeness
   // If user has name, role, and familyId, they've completed onboarding
-  const hasCompleteProfile = user && user.name && user.role && user.familyId;
+  // Note: familyId can be 0 which is falsy, so we need to check for null/undefined specifically
+  const hasCompleteProfile = user && user.name && user.role && (user.familyId !== null && user.familyId !== undefined);
   
   console.log('Has complete profile:', hasCompleteProfile);
   

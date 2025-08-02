@@ -75,11 +75,18 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
         throw new Error("User not authenticated");
       }
 
+      // Normalize family code (trim whitespace and convert to uppercase)
+      const normalizedFamilyCode = data.familyCode.trim().toUpperCase();
+      
+      if (!normalizedFamilyCode) {
+        throw new Error("Please enter a family code");
+      }
+
       // Find family by code
       const { data: family, error: familyError } = await supabase
         .from('families')
         .select('id')
-        .eq('code', data.familyCode)
+        .eq('code', normalizedFamilyCode)
         .single();
 
       if (familyError || !family) {
