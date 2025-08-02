@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Shield, Sparkles, Users } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/auth-provider";
+import { supabase } from "@/lib/supabaseClient";
 
 interface RoleSelectionProps {
   onNext: () => void;
@@ -17,12 +18,28 @@ export function RoleSelection({ onNext, onBack }: RoleSelectionProps) {
 
   const updateRoleMutation = useMutation({
     mutationFn: async (role: string) => {
-      // In a real implementation, you would update the user's role in the backend
-      // For now, we'll just proceed to the next step
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Update the user's role in Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({ role })
+        .eq('id', user.id);
+
+      if (error) {
+        throw new Error(`Failed to update role: ${error.message}`);
+      }
+
       return { role };
     },
     onSuccess: () => {
       onNext();
+    },
+    onError: (error) => {
+      console.error("Failed to update role:", error);
+      // You could add error handling UI here if needed
     },
   });
 
