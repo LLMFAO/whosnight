@@ -2,6 +2,28 @@
 
 A co-parenting coordination app built with React, TypeScript, and Supabase.
 
+## Recent Fixes and Improvements
+
+### Critical Issues Resolved ✅
+
+1. **Event Creation Getting Stuck** 
+   - Fixed event functionality migrating from Express API endpoints to direct Supabase database operations
+   - Event creation, editing, and deletion now work properly in `date-assignment-sheet.tsx` and `calendar-view.tsx`
+
+2. **Users Stuck in Onboarding Loop**
+   - Resolved database field name mismatch (`familyId` → `family_id`) in auth-provider
+   - Users with complete profiles now skip onboarding automatically
+
+3. **Missing User Features**
+   - Added logout functionality to Home page header
+   - Implemented family code display with copy-to-clipboard
+   - Removed manual role selector; now uses authenticated user's actual role
+
+4. **Authentication System**
+   - Fully migrated from Express API to Supabase Auth
+   - Fixed duplicate email registration with proper error handling
+   - Added Supabase configuration for email confirmation redirects
+
 ## Architecture
 
 - **Frontend**: React + TypeScript + Vite
@@ -15,6 +37,7 @@ A co-parenting coordination app built with React, TypeScript, and Supabase.
 - All data access now uses Supabase client calls
 - Supabase Edge Functions for complex operations
 - Direct database queries for CRUD operations
+- Fixed field name mismatches between frontend and database schema
 
 ## Manual Testing Steps
 
@@ -38,15 +61,17 @@ A co-parenting coordination app built with React, TypeScript, and Supabase.
    - Accept/decline pending expenses
 
 4. **User Management**
-   - Switch between user roles (mom/dad/teen)
+   - Automatic role assignment based on database profile
    - View user request history
    - Undo recent actions
+   - Logout functionality
 
 5. **Notifications & Sharing**
    - View detailed notifications modal
    - Accept all pending items
    - Share updates via link generation
    - Log external notifications
+   - Family code display and sharing
 
 ### Error Handling Tests
 
@@ -54,6 +79,7 @@ A co-parenting coordination app built with React, TypeScript, and Supabase.
 - Test invalid data submissions
 - Test permission errors for teen users
 - Verify error messages display correctly
+- Test duplicate email registration handling
 
 ### Data Consistency Tests
 
@@ -116,6 +142,7 @@ npm run build
    - Replaced all `fetch('/api/...')` calls
    - Updated query keys for React Query
    - Implemented direct Supabase queries
+   - Fixed database field name mismatches
 
 3. **Edge Functions Created**
    - `get_pending_items`: Aggregates pending data
@@ -127,8 +154,15 @@ npm run build
    - Added error states to all queries
    - Improved user feedback for failures
    - Consistent error handling patterns
+   - Fixed duplicate email registration errors
 
-5. **Removed Legacy Code**
+5. **User Experience Improvements**
+   - Fixed onboarding loop for existing users
+   - Added logout functionality
+   - Implemented family code display
+   - Removed manual role switching
+
+6. **Removed Legacy Code**
    - Cleaned up unused `apiRequest` imports
    - Updated query invalidation keys
    - Removed Express API dependencies
@@ -140,6 +174,7 @@ npm run build
 - **Real-time**: Built-in subscription capabilities
 - **Security**: Row Level Security (RLS) policies
 - **Maintenance**: Reduced server infrastructure complexity
+- **User Experience**: Fixed critical workflow issues
 
 ## Next Steps
 
@@ -167,3 +202,4 @@ This gives you:
 - ✅ Global CDN performance
 - ✅ Automatic scaling
 - ✅ Cost-effective solution
+- ✅ Fixed critical user workflow issues

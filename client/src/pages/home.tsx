@@ -9,14 +9,13 @@ import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
 import NotificationBadge from "@/components/notification-badge";
 import UserRequestHistoryModal from "@/components/user-request-history-modal";
-import TeenPermissionsModal from "@/components/teen-permissions-modal";
+import ProfileModal from "@/components/profile-modal";
 import { AdBanner } from "@/components/ads/ad-banner";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Bell, History, Settings, Moon, Sun, LogOut, Copy, Users } from "lucide-react";
+import { Bell, History, Settings, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { BannerAdPosition } from "@capacitor-community/admob";
-import { useToast } from "@/hooks/use-toast";
 
 type ViewType = "calendar" | "todo";
 
@@ -25,33 +24,13 @@ export default function Home() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
   const [showRequestHistory, setShowRequestHistory] = useState(false);
-  const [showTeenSettings, setShowTeenSettings] = useState(false);
-  const [showFamilyCode, setShowFamilyCode] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuth();
-  const { toast } = useToast();
+  const { user } = useAuth();
 
   // Get user's role from auth context
   const currentUser = user?.role as "mom" | "dad" | "teen" || "mom";
-
-  // Fetch family information to get the family code
-  const { data: familyData } = useQuery({
-    queryKey: ["family", user?.familyId],
-    queryFn: async () => {
-      if (!user?.familyId) return null;
-      
-      const { data, error } = await supabase
-        .from("families")
-        .select("code, name")
-        .eq("id", user.familyId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.familyId,
-  });
 
   const { data: pendingItems, error: pendingError } = useQuery({
     queryKey: ["get_pending_items", currentUser],
@@ -94,50 +73,11 @@ export default function Home() {
     }
   };
 
-  const handleCopyFamilyCode = async () => {
-    if (familyData?.code) {
-      try {
-        await navigator.clipboard.writeText(familyData.code);
-        toast({
-          title: "Family code copied!",
-          description: "Share this code with family members to join.",
-        });
-      } catch (error) {
-        toast({
-          title: "Failed to copy",
-          description: "Please copy the code manually: " + familyData.code,
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const isParent = currentUser === "mom" || currentUser === "dad";
-
   return (
     <div className="max-w-md mx-auto bg-background min-h-screen relative">
-      {/* Modern Header */}
+      {/* Clean Header */}
       <div className="flex items-center justify-between p-4 bg-card border-b border-border">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-lg font-mono font-bold tracking-tight">Who's Night?</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Logged in as: <span className="font-medium capitalize">{user?.name || currentUser}</span>
-            </span>
-            {familyData?.code && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopyFamilyCode}
-                className="h-6 px-2 text-xs"
-              >
-                <Users className="h-3 w-3 mr-1" />
-                {familyData.code}
-                <Copy className="h-3 w-3 ml-1" />
-              </Button>
-            )}
-          </div>
-        </div>
+        <h1 className="text-lg font-mono font-bold tracking-tight">Who's Night?</h1>
         
         <div className="flex items-center gap-1">
           {/* Theme Toggle */}
@@ -181,26 +121,14 @@ export default function Home() {
             </Button>
           )}
 
-          {/* Teen Settings for parents only */}
-          {isParent && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowTeenSettings(true)}
-              className="h-8 w-8 p-0"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          )}
-
-          {/* Logout */}
+          {/* Profile Settings */}
           <Button
             variant="ghost"
             size="sm"
-            onClick={logout}
+            onClick={() => setShowProfileModal(true)}
             className="h-8 w-8 p-0"
           >
-            <LogOut className="h-4 w-4" />
+            <Settings className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -239,11 +167,10 @@ export default function Home() {
         onOpenChange={setShowRequestHistory}
       />
 
-      {/* Teen Settings Modal */}
-      <TeenPermissionsModal
-        open={showTeenSettings}
-        onOpenChange={setShowTeenSettings}
-        teenUserId={3}
+      {/* Profile Modal */}
+      <ProfileModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
       />
     </div>
   );
