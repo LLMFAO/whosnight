@@ -1,21 +1,22 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth/auth-provider";
 import CalendarView from "@/components/calendar-view";
 import TodoView from "@/components/todo-view";
 import BottomNavigation from "@/components/bottom-navigation";
 import ShareUpdatesModal from "@/components/share-updates-modal";
 import DetailedNotificationsModal from "@/components/detailed-notifications-modal";
-import UserRoleSelector from "@/components/user-role-selector";
 import NotificationBadge from "@/components/notification-badge";
 import UserRequestHistoryModal from "@/components/user-request-history-modal";
 import TeenPermissionsModal from "@/components/teen-permissions-modal";
 import { AdBanner } from "@/components/ads/ad-banner";
 import { getPendingItemsCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Bell, History, Settings, Moon, Sun } from "lucide-react";
+import { Bell, History, Settings, Moon, Sun, LogOut, Copy, Users } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { BannerAdPosition } from "@capacitor-community/admob";
+import { useToast } from "@/hooks/use-toast";
 
 type ViewType = "calendar" | "todo";
 
@@ -25,19 +26,32 @@ export default function Home() {
   const [showDetailedNotifications, setShowDetailedNotifications] = useState(false);
   const [showRequestHistory, setShowRequestHistory] = useState(false);
   const [showTeenSettings, setShowTeenSettings] = useState(false);
-  const [currentUser, setCurrentUser] = useState<"mom" | "dad" | "teen">(() => {
-    // Initialize based on URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const userParam = urlParams.get('user') as "mom" | "dad" | "teen";
-    return userParam && ['mom', 'dad', 'teen'].includes(userParam) ? userParam : "mom";
-  });
+  const [showFamilyCode, setShowFamilyCode] = useState(false);
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
 
-  // Sync localStorage on initial load and user changes
-  useEffect(() => {
-    localStorage.setItem('currentUser', currentUser);
-  }, [currentUser]);
+  // Get user's role from auth context
+  const currentUser = user?.role as "mom" | "dad" | "teen" || "mom";
+
+  // Fetch family information to get the family code
+  const { data: familyData } = useQuery({
+    queryKey: ["family", user?.familyId],
+    queryFn: async () => {
+      if (!user?.familyId) return null;
+      
+      const { data, error } = await supabase
+        .from("families")
+        .select("code, name")
+        .eq("id", user.familyId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.familyId,
+  });
 
   const { data: pendingItems, error: pendingError } = useQuery({
     queryKey: ["get_pending_items", currentUser],
@@ -61,13 +75,13 @@ export default function Home() {
     try {
       await Promise.all([
         supabase.from("calendar_assignments").update({ status: "confirmed" })
-          .eq("created_by", currentUser).eq("status", "pending"),
+          .eq("created_by", user?.id).eq("status", "pending"),
         supabase.from("events").update({ status: "confirmed" })
-          .eq("created_by", currentUser).eq("status", "pending"),
+          .eq("created_by", user?.id).eq("status", "pending"),
         supabase.from("tasks").update({ status: "confirmed" })
-          .eq("created_by", currentUser).eq("status", "pending"),
+          .eq("created_by", user?.id).eq("status", "pending"),
         supabase.from("expenses").update({ status: "confirmed" })
-          .eq("created_by", currentUser).eq("status", "pending"),
+          .eq("created_by", user?.id).eq("status", "pending"),
       ]);
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["get_pending_items", currentUser] });
@@ -80,15 +94,22 @@ export default function Home() {
     }
   };
 
-  const handleUserSwitch = (user: "mom" | "dad" | "teen") => {
-    setCurrentUser(user);
-    // Update both URL parameter and localStorage
-    const url = new URL(window.location.href);
-    url.searchParams.set('user', user);
-    window.history.replaceState({}, '', url);
-    localStorage.setItem('currentUser', user);
-    // Clear cache to refetch data for new user
-    queryClient.clear();
+  const handleCopyFamilyCode = async () => {
+    if (familyData?.code) {
+      try {
+        await navigator.clipboard.writeText(familyData.code);
+        toast({
+          title: "Family code copied!",
+          description: "Share this code with family members to join.",
+        });
+      } catch (error) {
+        toast({
+          title: "Failed to copy",
+          description: "Please copy the code manually: " + familyData.code,
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const isParent = currentUser === "mom" || currentUser === "dad";
@@ -99,10 +120,23 @@ export default function Home() {
       <div className="flex items-center justify-between p-4 bg-card border-b border-border">
         <div className="flex flex-col gap-2">
           <h1 className="text-lg font-mono font-bold tracking-tight">Who's Night?</h1>
-          <UserRoleSelector
-            currentRole={currentUser}
-            onRoleChange={handleUserSwitch}
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Logged in as: <span className="font-medium capitalize">{user?.name || currentUser}</span>
+            </span>
+            {familyData?.code && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyFamilyCode}
+                className="h-6 px-2 text-xs"
+              >
+                <Users className="h-3 w-3 mr-1" />
+                {familyData.code}
+                <Copy className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center gap-1">
@@ -158,12 +192,18 @@ export default function Home() {
               <Settings className="h-4 w-4" />
             </Button>
           )}
+
+          {/* Logout */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="h-8 w-8 p-0"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-
-
-
-
 
       {/* Main Content */}
       <div className="pb-20">
