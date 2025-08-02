@@ -9,6 +9,7 @@ interface User {
   username?: string;
   name?: string;
   role?: string;
+  familyId?: number;
 }
 
 interface AuthContextType {
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Get additional user profile data if needed
       const { data: profile } = await supabase
         .from('users')
-        .select('username, name, role')
+        .select('username, name, role, familyId')
         .eq('id', supabaseUser.id)
         .single();
       
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         username: profile?.username,
         name: profile?.name,
         role: profile?.role,
+        familyId: profile?.familyId,
       };
     },
     retry: false,

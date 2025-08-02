@@ -25,9 +25,11 @@ function ProtectedRoute({ component: Component, ...props }: any) {
     return <AuthPage />;
   }
   
-  // Check if user needs onboarding
-  const hasCompletedOnboarding = localStorage.getItem("onboarding-completed");
-  if (!hasCompletedOnboarding && user) {
+  // Check if user needs onboarding based on their profile completeness
+  // If user has name, role, and familyId, they've completed onboarding
+  const hasCompleteProfile = user && user.name && user.role && user.familyId;
+  
+  if (!hasCompleteProfile && user) {
     return <OnboardingPage />;
   }
   
