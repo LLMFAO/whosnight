@@ -134,11 +134,17 @@ CREATE POLICY "Users can view their own profile" ON users
 CREATE POLICY "Users can update their own profile" ON users
   FOR UPDATE USING (auth.uid()::text = id);
 
+CREATE POLICY "Users can insert their own profile" ON users
+  FOR INSERT WITH CHECK (auth.uid()::text = id);
+
 -- Create RLS policies for families table
 CREATE POLICY "Users can view their family" ON families
   FOR SELECT USING (
     id IN (SELECT family_id FROM users WHERE id = auth.uid()::text)
   );
+
+CREATE POLICY "Authenticated users can create families" ON families
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Create RLS policies for calendar_assignments table
 CREATE POLICY "Family members can view calendar assignments" ON calendar_assignments

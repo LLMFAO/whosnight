@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Paperclip } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ export default function ExpensesView() {
     description: "",
   });
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const currentMonth = formatMonth(new Date());
 
   const { data: expenses = [], error: expensesError } = useQuery({
@@ -45,26 +47,35 @@ export default function ExpensesView() {
     },
   });
 
-  const { data: pendingItems, error: pendingError } = useQuery({
-    queryKey: ["get_pending_items"],
+  const { data: pendingExpenses = [], error: pendingError } = useQuery({
+    queryKey: ["pending_expenses", user?.family_id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<{
-        expenses: any[];
-      }>("get_pending_items", { search: { user: /* provide user context or default */ "" } });
+      if (!user?.family_id) return [];
+      
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
   const createExpenseMutation = useMutation({
     mutationFn: async (expense: any) => {
-      const { data, error } = await supabase.from("expenses").insert(expense);
+      const { data, error } = await supabase.from("expenses").insert({
+        ...expense,
+        created_by: user?.id,
+        status: "pending"
+      });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_expenses", user?.family_id] });
       setShowAddExpenseModal(false);
       setExpenseForm({
         name: "",
@@ -85,7 +96,7 @@ export default function ExpensesView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_expenses", user?.family_id] });
     },
   });
 
@@ -98,7 +109,7 @@ export default function ExpensesView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_expenses", user?.family_id] });
     },
   });
 
@@ -120,7 +131,7 @@ export default function ExpensesView() {
     updateExpenseStatusMutation.mutate({ id: expenseId, status: "declined" });
   };
 
-  const pendingExpensesCount = pendingItems?.expenses?.length || 0;
+  const pendingExpensesCount = pendingExpenses?.length || 0;
   const momTotal = getExpensesSummary(expenses, "mom");
   const dadTotal = getExpensesSummary(expenses, "dad");
 
@@ -222,7 +233,7 @@ export default function ExpensesView() {
                       {expense.category}
                     </Badge>
                     <span className="text-xs text-gray-500">
-                      Paid by {expense.paidBy === "mom" ? "Mom" : "Dad"}
+                      Paid by {expense.paidBy === "mom" ? "Mom" : "Dad"}.
                     </span>
                     {expense.hasReceipt && (
                       <Paperclip className="w-3 h-3 text-gray-400" title="Has receipt" />

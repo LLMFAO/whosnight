@@ -33,16 +33,45 @@ export default function Home() {
   const currentUser = user?.role as "mom" | "dad" | "teen" || "mom";
 
   const { data: pendingItems, error: pendingError } = useQuery({
-    queryKey: ["get_pending_items", currentUser],
+    queryKey: ["pending_items", currentUser, user?.family_id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<{
-        assignments: any[];
-        events: any[];
-        tasks: any[];
-        expenses: any[];
-      }>("get_pending_items", { search: { user: currentUser } });
-      if (error) throw error;
-      return data;
+      if (!user?.family_id) return { assignments: [], events: [], tasks: [], expenses: [] };
+
+      // Get all pending items for the family
+      const [assignmentsResult, eventsResult, tasksResult, expensesResult] = await Promise.all([
+        supabase
+          .from("calendar_assignments")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("events")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("tasks")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("expenses")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+      ]);
+
+      if (assignmentsResult.error) throw assignmentsResult.error;
+      if (eventsResult.error) throw eventsResult.error;
+      if (tasksResult.error) throw tasksResult.error;
+      if (expensesResult.error) throw expensesResult.error;
+
+      return {
+        assignments: assignmentsResult.data || [],
+        events: eventsResult.data || [],
+        tasks: tasksResult.data || [],
+        expenses: expensesResult.data || []
+      };
     },
     refetchInterval: 5000, // Check for updates every 5 seconds
   });
@@ -63,7 +92,7 @@ export default function Home() {
           .eq("created_by", user?.id).eq("status", "pending"),
       ]);
       // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items", currentUser] });
+      queryClient.invalidateQueries({ queryKey: ["pending_items", currentUser, user?.family_id] });
       queryClient.invalidateQueries({ queryKey: ["calendar_assignments"] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

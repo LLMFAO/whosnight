@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ export default function TodoView() {
     assignedTo: "mom",
   });
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: tasks = [], error: tasksError } = useQuery({
     queryKey: ["tasks"],
@@ -31,26 +33,35 @@ export default function TodoView() {
     },
   });
 
-  const { data: pendingItems, error: pendingError } = useQuery({
-    queryKey: ["get_pending_items"],
+  const { data: pendingTasks = [], error: pendingError } = useQuery({
+    queryKey: ["pending_tasks", user?.family_id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<{
-        tasks: any[];
-      }>("get_pending_items", { search: { user: /* provide user context or default */ "" } });
+      if (!user?.family_id) return [];
+      
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
   const createTaskMutation = useMutation({
     mutationFn: async (task: any) => {
-      const { data, error } = await supabase.from("tasks").insert(task);
+      const { data, error } = await supabase.from("tasks").insert({
+        ...task,
+        created_by: user?.id,
+        status: "pending"
+      });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.family_id] });
       setShowAddTaskModal(false);
       setTaskForm({ name: "", description: "", dueDate: "", assignedTo: "mom" });
     },
@@ -64,7 +75,7 @@ export default function TodoView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.family_id] });
     },
   });
 
@@ -88,7 +99,7 @@ export default function TodoView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["get_pending_items"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.family_id] });
     },
   });
 
@@ -111,7 +122,7 @@ export default function TodoView() {
     toggleCompleteMutation.mutate({ id: taskId, completed: !completed });
   };
 
-  const pendingTasksCount = pendingItems?.tasks?.length || 0;
+  const pendingTasksCount = pendingTasks?.length || 0;
 
   return (
     <div>
@@ -155,7 +166,7 @@ export default function TodoView() {
             <div
               key={task.id}
               className={`bg-white border rounded-xl p-4 shadow-sm ${
-                task.status === "pending" && task.createdBy !== 1 // Assuming current user ID is 1
+                task.status === "pending" && task.created_by !== user?.id
                   ? "border-orange-200 border-dashed"
                   : "border-gray-200"
               }`}
@@ -177,35 +188,34 @@ export default function TodoView() {
                   {task.description && (
                     <p className="text-sm text-gray-500 mt-1">{task.description}</p>
                   )}
-                  {task.dueDate && (
+                  {task.due_date && (
                     <p className="text-sm text-gray-500 mt-1">
-                      Due: {format(new Date(task.dueDate), "MMMM d, yyyy")}
+                      Due: {format(new Date(task.due_date), "MMMM d, yyyy")}
                     </p>
                   )}
                   <div className="flex items-center space-x-2 mt-2">
                     <Badge
-                      variant="outline"
                       className={
-                        task.assignedTo === "mom"
+                        task.assigned_to === "mom"
                           ? "border-red-200 text-red-700 bg-red-50"
                           : "border-blue-200 text-blue-700 bg-blue-50"
                       }
                     >
-                      Assigned to {task.assignedTo === "mom" ? "Mom" : "Dad"}
+                      Assigned to {task.assigned_to === "mom" ? "Mom" : "Dad"}
                     </Badge>
                     {task.status === "confirmed" && (
-                      <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
+                      <Badge className="text-green-600 bg-green-50 border-green-200">
                         Confirmed
                       </Badge>
                     )}
                     {task.completed && (
-                      <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
+                      <Badge className="text-green-600 bg-green-50 border-green-200">
                         Completed
                       </Badge>
                     )}
                   </div>
                 </div>
-                {task.status === "pending" && task.createdBy !== 1 && (
+                {task.status === "pending" && task.created_by !== user?.id && (
                   <div className="flex space-x-2">
                     <Button
                       size="sm"
