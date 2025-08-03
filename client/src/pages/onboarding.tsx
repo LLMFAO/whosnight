@@ -22,7 +22,7 @@ export function OnboardingPage() {
   useEffect(() => {
     // If user already has a familyId, they've joined a family and should skip onboarding
     // Users who have joined a family (familyId is a number) should skip onboarding
-    const hasJoinedFamily = user && typeof user.familyId === 'number' && user.familyId > 0;
+    const hasJoinedFamily = user && typeof user.family_id === 'number' && user.family_id > 0;
     console.log('Onboarding check:', { user, hasJoinedFamily });
     if (hasJoinedFamily) {
       // Skip onboarding and go to main app

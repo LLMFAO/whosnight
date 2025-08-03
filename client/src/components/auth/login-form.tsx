@@ -46,7 +46,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         username: profile?.username,
         name: profile?.name,
         role: profile?.role,
-        familyId: profile?.family_id, // Update to include familyId
+        family_id: profile?.family_id, // Update property name to family_id
       };
     },
     onSuccess: (userData) => {
