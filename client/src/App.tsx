@@ -30,11 +30,12 @@ function ProtectedRoute({ component: Component, ...props }: any) {
   console.log('User name:', user?.name);
   console.log('User role:', user?.role);
   console.log('User familyId:', user?.familyId);
+  console.log('User familyId type:', typeof user?.familyId);
   
   // Check if user needs onboarding based on their profile completeness
-  // If user has joined a family (familyId is not null/undefined), they should skip onboarding
-  // Users who haven't joined a family (familyId is null) should go through onboarding
-  const hasJoinedFamily = user && user.familyId !== null && user.familyId !== undefined;
+  // If user has joined a family (familyId is a number), they should skip onboarding
+  // Users who haven't joined a family (familyId is null or undefined) should go through onboarding
+  const hasJoinedFamily = user && typeof user.familyId === 'number';
   const hasCompleteProfile = user && user.name && user.role && hasJoinedFamily;
   
   console.log('Has joined family:', hasJoinedFamily);
