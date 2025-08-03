@@ -56,6 +56,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error("Not authenticated");
       }
       
+      console.log('Supabase User:', supabaseUser);
+
       // Get additional user profile data if needed
       // Handle case where user profile might not exist yet
       let profile = null;
@@ -65,6 +67,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           .select('username, name, role, family_id')
           .eq('id', supabaseUser.id)
           .maybeSingle(); // Use maybeSingle to handle case where no row exists
+        
+        console.log('User Profile Data from DB:', profileData);
         
         if (profileError && profileError.code !== 'PGRST116') {
           // PGRST116 is "not found" error, which is expected for new users

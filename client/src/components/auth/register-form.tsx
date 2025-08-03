@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Shield } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -21,7 +22,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
-  const [familyCode, setFamilyCode] = useState("");
+  const [invitationCode, setInvitationCode] = useState("");
   const [joinExistingFamily, setJoinExistingFamily] = useState(false);
 
   const registerMutation = useMutation({
@@ -31,8 +32,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       name: string; 
       username: string;
       role: string; 
-      familyCode?: string 
+      invitationCode?: string 
     }) => {
+      console.log('=== REGISTER WITH INVITATION DEBUG START ===');
+      console.log('Registration data:', { ...userData, password: '[REDACTED]' });
+
       // First, sign up the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
@@ -47,6 +51,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       });
 
       if (authError) {
+        console.error('❌ Auth signup failed:', authError);
         // Handle specific Supabase Auth errors
         if (authError.message.includes('User already registered')) {
           throw new Error('An account with this email already exists. Please sign in instead.');
@@ -55,55 +60,92 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       }
 
       if (!authData.user) {
+        console.error('❌ No user returned from auth signup');
         throw new Error("Registration failed");
       }
 
+      console.log('✅ User authenticated:', authData.user.id);
+
       let familyId = null;
       
-      // If family code is provided, join the family directly
-      if (userData.familyCode) {
-        // Find family by code (trim and normalize)
-        const normalizedFamilyCode = userData.familyCode.trim().toUpperCase();
-        const { data: family, error: familyError } = await supabase
-          .from('families')
-          .select('id')
-          .eq('code', normalizedFamilyCode)
-          .single();
-
-        if (familyError || !family) {
-          throw new Error("Invalid family code. Please check and try again.");
-        }
+      // If invitation code is provided, use the secure invitation system
+      if (userData.invitationCode) {
+        console.log('🔐 Using secure invitation system...');
         
-        familyId = family.id;
-      }
+        // Normalize invitation code
+        const normalizedCode = userData.invitationCode.trim().toUpperCase();
+        console.log('Normalized invitation code:', normalizedCode);
 
-      // Insert user profile data into the users table
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: userData.email,
-          username: userData.username,
-          name: userData.name,
-          role: userData.role,
-          family_id: familyId // Set family_id during initial creation if joining family
-        });
-
-      if (profileError) {
-        // Handle duplicate key errors with user-friendly messages
-        if (profileError.code === '23505') { // PostgreSQL unique constraint violation
-          if (profileError.message.includes('users_new_pkey') || profileError.message.includes('users_pkey')) {
-            throw new Error('An account with this email already exists. Please sign in instead.');
-          }
-          if (profileError.message.includes('username')) {
-            throw new Error('This username is already taken. Please choose a different username.');
-          }
-          if (profileError.message.includes('email')) {
-            throw new Error('An account with this email already exists. Please sign in instead.');
-          }
+        // Get user's IP address for logging (optional)
+        let ipAddress = null;
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipResponse.json();
+          ipAddress = ipData.ip;
+        } catch (e) {
+          console.warn('Could not get IP address:', e);
         }
-        throw new Error(`Profile creation failed: ${profileError.message}`);
+
+        // Use the secure invitation function
+        const { data: result, error: invitationError } = await supabase
+          .rpc('use_family_invitation', {
+            p_invitation_code: normalizedCode,
+            p_ip_address: ipAddress,
+            p_user_agent: navigator.userAgent
+          });
+
+        console.log('Invitation usage result:', result, invitationError);
+
+        if (invitationError) {
+          console.error('❌ Invitation function failed:', invitationError);
+          throw new Error(`Invalid invitation code: ${invitationError.message}`);
+        }
+
+        const invitationResult = result[0];
+        
+        if (!invitationResult.success) {
+          console.error('❌ Invitation usage failed:', invitationResult.message);
+          throw new Error(invitationResult.message);
+        }
+
+        familyId = invitationResult.family_id;
+        console.log('✅ Successfully used invitation, family_id:', familyId);
+      } else {
+        console.log('ℹ️ No invitation code provided, user will set up family later');
+        
+        // Insert user profile data into the users table without family_id
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email: userData.email,
+            username: userData.username,
+            name: userData.name,
+            role: userData.role,
+            family_id: null // Will be set during onboarding
+          });
+
+        if (profileError) {
+          console.error('❌ Profile creation failed:', profileError);
+          // Handle duplicate key errors with user-friendly messages
+          if (profileError.code === '23505') { // PostgreSQL unique constraint violation
+            if (profileError.message.includes('users_new_pkey') || profileError.message.includes('users_pkey')) {
+              throw new Error('An account with this email already exists. Please sign in instead.');
+            }
+            if (profileError.message.includes('username')) {
+              throw new Error('This username is already taken. Please choose a different username.');
+            }
+            if (profileError.message.includes('email')) {
+              throw new Error('An account with this email already exists. Please sign in instead.');
+            }
+          }
+          throw new Error(`Profile creation failed: ${profileError.message}`);
+        }
+
+        console.log('✅ User profile created without family');
       }
+
+      console.log('=== REGISTER WITH INVITATION DEBUG END ===');
 
       return {
         id: authData.user.id,
@@ -111,11 +153,15 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         username: userData.username,
         name: userData.name,
         role: userData.role,
-        familyId: familyId // Return familyId so App.tsx knows user has joined a family
+        familyId: familyId // Return familyId so App.tsx knows if user has joined a family
       };
     },
     onSuccess: (userData) => {
+      console.log('✅ Registration successful:', userData);
       onSuccess(userData);
+    },
+    onError: (error) => {
+      console.error('❌ Registration failed:', error);
     },
   });
 
@@ -132,7 +178,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       name,
       username,
       role,
-      familyCode: joinExistingFamily ? familyCode : undefined
+      invitationCode: joinExistingFamily ? invitationCode : undefined
     });
   };
 
@@ -257,26 +303,32 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 className="rounded border-gray-300"
               />
               <Label htmlFor="joinFamily" className="text-sm">
-                Join an existing family (I have a family code)
+                Join an existing family (I have a secure invitation code)
               </Label>
             </div>
 
             {joinExistingFamily && (
               <div className="space-y-2">
-                <Label htmlFor="familyCode">Family Code</Label>
+                <Label htmlFor="invitationCode" className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Secure Invitation Code
+                </Label>
                 <Input
-                  id="familyCode"
+                  id="invitationCode"
                   type="text"
-                  placeholder="e.g., ABC-12345"
-                  value={familyCode}
-                  onChange={(e) => setFamilyCode(e.target.value)}
+                  placeholder="e.g., ABCD-EFGH-IJKL"
+                  value={invitationCode}
+                  onChange={(e) => setInvitationCode(e.target.value)}
                   required={joinExistingFamily}
                   disabled={registerMutation.isPending}
-                  className="text-center text-lg tracking-wider"
+                  className="text-center text-lg tracking-wider font-mono"
                 />
-                <p className="text-xs text-gray-500">
-                  Ask a family member for the family code to join their group.
-                </p>
+                <div className="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                  <p className="flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    Secure invitation codes expire automatically and have usage limits for your family's safety.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -284,7 +336,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <Button
             type="submit"
             className="w-full"
-            disabled={registerMutation.isPending || password !== confirmPassword || !role || (joinExistingFamily && !familyCode.trim())}
+            disabled={registerMutation.isPending || password !== confirmPassword || !role || (joinExistingFamily && !invitationCode.trim())}
           >
             {registerMutation.isPending ? "Creating account..." : "Create Account"}
           </Button>

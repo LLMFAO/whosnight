@@ -153,14 +153,24 @@ function ProtectedRoute({ component: Component, ...props }: any) {
   console.log('User name:', user?.name);
   console.log('User role:', user?.role);
   console.log('User familyId:', user?.familyId);
+  console.log('User family_id:', user?.family_id);
   console.log('User familyId type:', typeof user?.familyId);
+  console.log('User family_id type:', typeof user?.family_id);
+  
+  // Check if onboarding was already completed via localStorage
+  const onboardingCompleted = localStorage.getItem("onboarding-completed") === "true";
   
   // Check if user needs onboarding based on their profile completeness
   // A user should go through onboarding only if they haven't joined a family yet
   // Users who have joined a family (familyId is a number) should skip onboarding
-  const hasJoinedFamily = user && typeof user.familyId === 'number' && user.familyId > 0;
+  // Check both familyId (camelCase) and family_id (snake_case from database)
+  const hasJoinedFamily = user && (
+    (typeof user.familyId === 'number' && user.familyId > 0) ||
+    (typeof user.family_id === 'number' && user.family_id > 0)
+  );
   
   console.log('Has joined family:', hasJoinedFamily);
+  console.log('Onboarding completed:', onboardingCompleted);
   
   // If user has joined a family, skip onboarding and show main app
   if (hasJoinedFamily) {
@@ -168,9 +178,15 @@ function ProtectedRoute({ component: Component, ...props }: any) {
     return <Component {...props} />;
   }
   
-  // If user hasn't joined a family but is authenticated, they need to go through onboarding
-  if (!hasJoinedFamily && user) {
-    console.log('Redirecting to onboarding - user has not joined family');
+  // If onboarding was completed (even without family), show main app to prevent infinite loops
+  if (onboardingCompleted) {
+    console.log('Onboarding was completed, showing main app to prevent infinite loop');
+    return <Component {...props} />;
+  }
+  
+  // If user hasn't joined a family and hasn't completed onboarding, they need to go through onboarding
+  if (!hasJoinedFamily && !onboardingCompleted && user) {
+    console.log('Redirecting to onboarding - user has not joined family and not completed onboarding');
     return <OnboardingPage />;
   }
   

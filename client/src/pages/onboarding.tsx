@@ -20,12 +20,33 @@ export function OnboardingPage() {
 
   // Check if user has already completed onboarding
   useEffect(() => {
-    // If user already has a familyId, they've joined a family and should skip onboarding
-    // Users who have joined a family (familyId is a number) should skip onboarding
-    const hasJoinedFamily = user && typeof user.family_id === 'number' && user.family_id > 0;
-    console.log('Onboarding check:', { user, hasJoinedFamily });
-    if (hasJoinedFamily) {
-      // Skip onboarding and go to main app
+    if (!user) return;
+
+    // Check if onboarding was already completed via localStorage
+    const onboardingCompleted = localStorage.getItem("onboarding-completed") === "true";
+    
+    // Check if user has joined a family (familyId is a number and > 0)
+    const hasJoinedFamily = user && typeof user.familyId === 'number' && user.familyId > 0;
+    
+    // Also check the family_id field (snake_case from database)
+    const hasJoinedFamilyAlt = user && typeof user.family_id === 'number' && user.family_id > 0;
+    
+    console.log('Onboarding check:', { 
+      user, 
+      onboardingCompleted, 
+      hasJoinedFamily, 
+      hasJoinedFamilyAlt,
+      familyId: user.familyId,
+      family_id: user.family_id,
+      familyIdType: typeof user.familyId,
+      family_idType: typeof user.family_id
+    });
+    
+    // Skip onboarding if:
+    // 1. User has joined a family, OR
+    // 2. Onboarding was already completed (prevents infinite loops)
+    if (hasJoinedFamily || hasJoinedFamilyAlt || onboardingCompleted) {
+      console.log('Skipping onboarding - redirecting to main app');
       setLocation("/");
     }
   }, [user, setLocation]);
@@ -43,7 +64,8 @@ export function OnboardingPage() {
   };
 
   const handleComplete = () => {
-    // Mark onboarding as complete (in a real app, you'd save this to the backend)
+    console.log('Onboarding completed - setting localStorage flag and redirecting');
+    // Mark onboarding as complete to prevent infinite loops
     localStorage.setItem("onboarding-completed", "true");
     setLocation("/");
   };

@@ -37,12 +37,17 @@ serve(async (req) => {
       });
     }
 
+    console.log('Join family function called with familyCode:', familyCode);
+    console.log('User ID:', user.id);
+
     // Find the family by code
     const { data: family, error: familyError } = await supabase
       .from("families")
       .select("id")
       .eq("code", familyCode)
       .single();
+
+    console.log('Family lookup result:', family, familyError);
 
     if (familyError || !family) {
       return new Response(JSON.stringify({ error: "Invalid family code" }), {
@@ -56,6 +61,8 @@ serve(async (req) => {
       .from("users")
       .update({ family_id: family.id })
       .eq("id", user.id);
+
+    console.log('User update result:', updateError);
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), {
