@@ -9,7 +9,7 @@ interface User {
   username?: string;
   name?: string;
   role?: string;
-  familyId?: number;
+  familyId?: number | null;
 }
 
 interface AuthContextType {
@@ -36,12 +36,20 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [justLoggedInUser, setJustLoggedInUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
 
   // Check if user is authenticated on app load
   const { data: userData, isLoading } = useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
+      // If we just logged in a user, use that data instead of fetching
+      if (justLoggedInUser) {
+        // Clear the just logged in user after using it
+        setTimeout(() => setJustLoggedInUser(null), 0);
+        return justLoggedInUser;
+      }
+      
       const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
       
       if (error || !supabaseUser) {
@@ -99,6 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          setJustLoggedInUser(null);
           queryClient.clear();
         }
       }
@@ -116,11 +125,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     },
     onSuccess: () => {
       setUser(null);
+      setJustLoggedInUser(null);
       queryClient.clear();
     },
   });
 
   const login = (userData: User) => {
+    // Set the just logged in user so we can use it in the query
+    setJustLoggedInUser(userData);
     setUser(userData);
     queryClient.invalidateQueries({ queryKey: ["auth"] });
   };
