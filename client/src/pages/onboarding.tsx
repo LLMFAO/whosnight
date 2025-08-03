@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WelcomeScreen } from "@/components/onboarding/welcome-screen";
 import { FamilySetupScreen } from "@/components/onboarding/family-setup-screen";
 import { RoleSelection } from "@/components/onboarding/role-selection";
 import { CompletionScreen } from "@/components/onboarding/completion-screen";
 import { useLocation } from "wouter";
+import { useAuth } from "@/components/auth/auth-provider";
 
 export function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
 
   const steps = [
     { component: WelcomeScreen, title: "Welcome" },
@@ -15,6 +17,15 @@ export function OnboardingPage() {
     { component: RoleSelection, title: "Role Selection" },
     { component: CompletionScreen, title: "Complete" }
   ];
+
+  // Check if user has already completed onboarding
+  useEffect(() => {
+    // If user already has a familyId and role, they've completed onboarding
+    if (user && user.familyId !== null && user.familyId !== undefined && user.role) {
+      // Skip onboarding and go to main app
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {

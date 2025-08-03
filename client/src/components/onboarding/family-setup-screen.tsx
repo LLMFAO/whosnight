@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, Users, Plus, AlertCircle } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/auth-provider";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -22,6 +22,7 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [familyCreatedOrJoined, setFamilyCreatedOrJoined] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const createFamilyMutation = useMutation({
     mutationFn: async (data: { familyName?: string }) => {
@@ -63,6 +64,8 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
       setFamilyCode(data.familyCode);
       setFamilyCreatedOrJoined(true);
       setErrorMessage("");
+      // Refresh the auth context to get updated user data
+      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
     },
     onError: (error) => {
       setErrorMessage(error.message || "Failed to create family. Please try again.");
@@ -137,6 +140,8 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
     onSuccess: () => {
       setFamilyCreatedOrJoined(true);
       setErrorMessage("");
+      // Refresh the auth context to get updated user data
+      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
     },
     onError: (error) => {
       setErrorMessage(error.message || "Failed to join family. Please try again.");
