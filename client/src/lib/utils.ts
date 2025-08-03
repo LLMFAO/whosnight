@@ -78,4 +78,17 @@ export function getPendingItemsCount(pendingItems: any) {
   )
 }
 
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+}
 
+export function getExpensesSummary(expenses: any[], parent: string): string {
+  const total = expenses
+    .filter(expense => expense.paidBy === parent && expense.status === 'confirmed')
+    .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  
+  return formatCurrency(total);
+}

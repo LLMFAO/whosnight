@@ -183,18 +183,6 @@ Located in `supabase/functions/`:
 [build]
   command = "npm run build"
   publish = "dist"
-
-[functions]
-  directory = "netlify/functions"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-[dev]
-  command = "npm run dev"
-
-[functions."*"]
-  included_files = ["supabase/**"]
 ```
 
 ### Environment Variables

@@ -35,10 +35,10 @@ export default function Home() {
   const { data: pendingItems, error: pendingError } = useQuery({
     queryKey: ["pending_items", currentUser, user?.family_id],
     queryFn: async () => {
-      if (!user?.family_id) return { assignments: [], events: [], tasks: [], expenses: [] };
+      if (!user?.family_id) return { assignments: [], events: [], tasks: [] };
 
       // Get all pending items for the family
-      const [assignmentsResult, eventsResult, tasksResult, expensesResult] = await Promise.all([
+      const [assignmentsResult, eventsResult, tasksResult] = await Promise.all([
         supabase
           .from("calendar_assignments")
           .select("*")
@@ -53,24 +53,17 @@ export default function Home() {
           .from("tasks")
           .select("*")
           .eq("status", "pending")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("expenses")
-          .select("*")
-          .eq("status", "pending")
           .order("created_at", { ascending: false })
       ]);
 
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (eventsResult.error) throw eventsResult.error;
       if (tasksResult.error) throw tasksResult.error;
-      if (expensesResult.error) throw expensesResult.error;
 
       return {
         assignments: assignmentsResult.data || [],
         events: eventsResult.data || [],
-        tasks: tasksResult.data || [],
-        expenses: expensesResult.data || []
+        tasks: tasksResult.data || []
       };
     },
     refetchInterval: 5000, // Check for updates every 5 seconds
@@ -88,15 +81,12 @@ export default function Home() {
           .eq("created_by", user?.id).eq("status", "pending"),
         supabase.from("tasks").update({ status: "confirmed" })
           .eq("created_by", user?.id).eq("status", "pending"),
-        supabase.from("expenses").update({ status: "confirmed" })
-          .eq("created_by", user?.id).eq("status", "pending"),
       ]);
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["pending_items", currentUser, user?.family_id] });
       queryClient.invalidateQueries({ queryKey: ["calendar_assignments"] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
     } catch (error) {
       console.error("Failed to accept all items:", error);
     }
@@ -188,7 +178,7 @@ export default function Home() {
       <DetailedNotificationsModal
         open={showDetailedNotifications}
         onOpenChange={setShowDetailedNotifications}
-        pendingItems={pendingItems || { assignments: [], events: [], tasks: [], expenses: [] }}
+        pendingItems={pendingItems || { assignments: [], events: [], tasks: [] }}
       />
 
       <UserRequestHistoryModal

@@ -8,6 +8,26 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 serve(async (req) => {
   try {
+    // Get the authorization header to identify the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing or invalid authorization header" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Get user from token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    
     const { familyCode } = await req.json();
     
     if (!familyCode) {
@@ -31,8 +51,18 @@ serve(async (req) => {
       });
     }
 
-    // TODO: Get user ID from auth context and update their family_id
-    // For now, this is a placeholder that would need proper auth integration
+    // Update the user's family_id
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ family_id: family.id })
+      .eq("id", user.id);
+
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     
     return new Response(JSON.stringify({ 
       success: true, 

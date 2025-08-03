@@ -212,7 +212,7 @@ Create a privacy policy covering:
 - Data sharing policies
 - User rights and controls
 
-Host at: `https://your-domain.com/privacy-policy`
+Host at: `https://whosnight.com/privacy-policy`
 
 ### 6. Build for Distribution
 

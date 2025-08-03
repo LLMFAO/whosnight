@@ -8,18 +8,38 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 serve(async (req) => {
   try {
+    // Get the authorization header to identify the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing or invalid authorization header" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Get user from token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    
     // Log the external notification action
     const { error: logError } = await supabase
       .from("action_logs")
       .insert({
-        userId: 1, // TODO: Get from auth context
+        user_id: user.id,
         action: "notify_external",
-        entityType: null,
-        entityId: null,
+        entity_type: null,
+        entity_id: null,
         details: "User notified co-parent externally",
-        requestedBy: 1, // TODO: Get from auth context
-        approvedBy: null,
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        requested_by: user.id,
+        approved_by: null,
+        ip_address: req.headers.get("x-forwarded-for") || "unknown",
       });
 
     if (logError) {

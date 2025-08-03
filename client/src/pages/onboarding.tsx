@@ -21,8 +21,10 @@ export function OnboardingPage() {
   // Check if user has already completed onboarding
   useEffect(() => {
     // If user already has a familyId, they've joined a family and should skip onboarding
-    // If they don't have a role yet, they'll be prompted to select one in the app
-    if (user && user.familyId !== null && user.familyId !== undefined) {
+    // Users who have joined a family (familyId is a number) should skip onboarding
+    const hasJoinedFamily = user && typeof user.familyId === 'number' && user.familyId > 0;
+    console.log('Onboarding check:', { user, hasJoinedFamily });
+    if (hasJoinedFamily) {
       // Skip onboarding and go to main app
       setLocation("/");
     }

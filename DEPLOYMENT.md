@@ -422,10 +422,10 @@ npx cap sync ios
 
 ```bash
 # Health check endpoint
-curl https://your-domain.com/api/health
+curl https://whosnight.com/api/health
 
 # Database connectivity
-curl https://your-domain.com/api/db-status
+curl https://whosnight.com/api/db-status
 ```
 
 #### Monitoring Tools

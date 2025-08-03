@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock, CheckSquare, XCircle, CheckCircle, RotateCcw, User } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/components/auth/auth-provider";
 
 interface UserRequestHistoryModalProps {
   open: boolean;
@@ -134,11 +135,15 @@ export default function UserRequestHistoryModal({
   const queryClient = useQueryClient();
   const [undoingLogId, setUndoingLogId] = useState<number | null>(null);
 
-  const currentUser = localStorage.getItem('currentUser') || 'mom';
+  const { user } = useAuth();
+  const currentUser = user?.id;
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['action_logs', currentUser],
     queryFn: async () => {
+      if (!currentUser) {
+        return [];
+      }
       const { data, error } = await supabase
         .from('action_logs')
         .select('*')
@@ -146,7 +151,7 @@ export default function UserRequestHistoryModal({
       if (error) throw error;
       return data;
     },
-    enabled: open,
+    enabled: open && !!currentUser,
   });
 
   const undoMutation = useMutation({
@@ -269,7 +274,7 @@ export default function UserRequestHistoryModal({
                             <p className="font-medium text-sm">
                               {getActionDescription(request)}
                             </p>
-                            <Badge variant="outline" className="text-xs shrink-0">
+                            <Badge>
                               {getRequestStatus(request)}
                             </Badge>
                           </div>

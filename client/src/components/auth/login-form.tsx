@@ -32,11 +32,13 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       }
 
       // Get additional user profile data
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('users')
-        .select('username, name, role')
+        .select('username, name, role, family_id')
         .eq('id', data.user.id)
         .single();
+
+      console.log('User profile fetch result:', { profile, profileError });
 
       return {
         id: data.user.id,
@@ -44,6 +46,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         username: profile?.username,
         name: profile?.name,
         role: profile?.role,
+        familyId: profile?.family_id, // Update to include familyId
       };
     },
     onSuccess: (userData) => {

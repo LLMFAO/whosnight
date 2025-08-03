@@ -263,11 +263,14 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
       </Dialog>
 
       {/* Teen Settings Modal */}
-      <TeenPermissionsModal
-        open={showTeenSettings}
-        onOpenChange={setShowTeenSettings}
-        teenUserId={3} // This should be dynamic based on actual teen user
-      />
+      {/* Teen Settings Modal - only show if there are teens in the family */}
+      {isParent && familyMembers?.some(member => member.role === "teen") && (
+        <TeenPermissionsModal
+          open={showTeenSettings}
+          onOpenChange={setShowTeenSettings}
+          teenUserId={familyMembers.find(member => member.role === "teen")?.id || 0}
+        />
+      )}
     </>
   );
 }
