@@ -84,9 +84,9 @@ BEGIN
   -- Generate a cryptographically secure random code
   -- Format: 3 groups of 4 characters separated by dashes (e.g., ABCD-EFGH-IJKL)
   RETURN UPPER(
-    SUBSTRING(encode(gen_random_bytes(3), 'base32') FROM 1 FOR 4) || '-' ||
-    SUBSTRING(encode(gen_random_bytes(3), 'base32') FROM 1 FOR 4) || '-' ||
-    SUBSTRING(encode(gen_random_bytes(3), 'base32') FROM 1 FOR 4)
+    SUBSTRING(encode(gen_random_bytes(4), 'hex') FROM 1 FOR 4) || '-' ||
+    SUBSTRING(encode(gen_random_bytes(4), 'hex') FROM 1 FOR 4) || '-' ||
+    SUBSTRING(encode(gen_random_bytes(4), 'hex') FROM 1 FOR 4)
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -148,18 +148,22 @@ BEGIN
   v_user_id := auth.uid()::text;
   
   -- Get invitation details
-  SELECT * INTO v_invitation 
-  FROM family_invitations 
+  SELECT * INTO v_invitation
+  FROM family_invitations
   WHERE invitation_code = p_invitation_code;
 
   -- Validate invitation
   IF v_invitation.id IS NULL THEN
     v_message := 'Invalid invitation code';
+    INSERT INTO invitation_usage_log (used_by, ip_address, user_agent, success, error_message, invitation_id)
+    VALUES (v_user_id, p_ip_address, p_user_agent, FALSE, v_message, NULL);
     RETURN QUERY SELECT NULL::INTEGER, FALSE, v_message;
   ELSE
     -- Check if user is already in a family
     IF EXISTS (SELECT 1 FROM users WHERE id = v_user_id AND family_id IS NOT NULL) THEN
       v_message := 'User is already a member of a family';
+      INSERT INTO invitation_usage_log (used_by, ip_address, user_agent, success, error_message, invitation_id)
+      VALUES (v_user_id, p_ip_address, p_user_agent, FALSE, v_message, v_invitation.id);
       RETURN QUERY SELECT NULL::INTEGER, FALSE, v_message;
     ELSE
       -- Join the family
@@ -176,6 +180,8 @@ BEGIN
 
       v_success := TRUE;
       v_message := 'Successfully joined family';
+      INSERT INTO invitation_usage_log (used_by, ip_address, user_agent, success, error_message, invitation_id)
+      VALUES (v_user_id, p_ip_address, p_user_agent, TRUE, v_message, v_invitation.id);
       RETURN QUERY SELECT v_invitation.family_id, v_success, v_message;
     END IF;
   END IF;
