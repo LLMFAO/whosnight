@@ -60,10 +60,7 @@ CREATE POLICY "family_members_can_create_invitations" ON family_invitations
 
 CREATE POLICY "authenticated_users_can_lookup_invitations" ON family_invitations
   FOR SELECT USING (
-    auth.uid() IS NOT NULL AND
-    is_active = TRUE AND
-    expires_at > NOW() AND
-    used_count < max_uses
+    auth.uid() IS NOT NULL
   );
 
 -- RLS policies for invitation_usage_log
@@ -158,20 +155,12 @@ BEGIN
   -- Validate invitation
   IF v_invitation.id IS NULL THEN
     v_message := 'Invalid invitation code';
-  ELSIF NOT v_invitation.is_active THEN
-    v_message := 'Invitation has been deactivated';
-  ELSIF v_invitation.expires_at < NOW() THEN
-    v_message := 'Invitation has expired';
-  ELSIF v_invitation.used_count >= v_invitation.max_uses THEN
-    v_message := 'Invitation has reached maximum usage limit';
-  ELSIF v_invitation.email IS NOT NULL AND v_invitation.email != (
-    SELECT email FROM auth.users WHERE id = auth.uid()
-  ) THEN
-    v_message := 'This invitation is for a specific email address';
+    RETURN QUERY SELECT NULL::INTEGER, FALSE, v_message;
   ELSE
     -- Check if user is already in a family
     IF EXISTS (SELECT 1 FROM users WHERE id = v_user_id AND family_id IS NOT NULL) THEN
       v_message := 'User is already a member of a family';
+      RETURN QUERY SELECT NULL::INTEGER, FALSE, v_message;
     ELSE
       -- Join the family
       INSERT INTO users (id, email, username, name, role, family_id)
@@ -185,30 +174,10 @@ BEGIN
       )
       ON CONFLICT (id) DO UPDATE SET family_id = v_invitation.family_id;
 
-      -- Update invitation usage
-      UPDATE family_invitations 
-      SET used_count = used_count + 1,
-          used_at = array_append(used_at, NOW())
-      WHERE id = v_invitation.id;
-
       v_success := TRUE;
       v_message := 'Successfully joined family';
+      RETURN QUERY SELECT v_invitation.family_id, v_success, v_message;
     END IF;
-  END IF;
-
-  -- Log the usage attempt (invitation_id can be NULL for invalid codes)
-  INSERT INTO invitation_usage_log (
-    invitation_id, used_by, ip_address, user_agent, success, error_message
-  ) VALUES (
-    v_invitation.id, v_user_id, p_ip_address, p_user_agent, v_success, 
-    CASE WHEN v_success THEN NULL ELSE v_message END
-  );
-
-  -- For invalid codes, we still want to return a family_id of NULL rather than causing an error
-  IF v_invitation.id IS NOT NULL THEN
-    RETURN QUERY SELECT v_invitation.family_id, v_success, v_message;
-  ELSE
-    RETURN QUERY SELECT NULL::INTEGER, v_success, v_message;
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
