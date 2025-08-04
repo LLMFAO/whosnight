@@ -22,37 +22,41 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   // Fetch family information
   const { data: familyData } = useQuery({
-    queryKey: ["family", user?.familyId],
+    queryKey: ["family", user?.familyId || user?.family_id],
     queryFn: async () => {
-      if (!user?.familyId) return null;
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!userFamilyId) return null;
       
       const { data, error } = await supabase
         .from("families")
         .select("code, name")
-        .eq("id", user.familyId)
+        .eq("id", userFamilyId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.familyId && open,
+    enabled: !!(user?.familyId || user?.family_id) && open,
   });
 
   // Fetch family members
   const { data: familyMembers } = useQuery({
-    queryKey: ["family-members", user?.familyId],
+    queryKey: ["family-members", user?.familyId || user?.family_id],
     queryFn: async () => {
-      if (!user?.familyId) return [];
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!userFamilyId) return [];
       
       const { data, error } = await supabase
         .from("users")
         .select("id, name, role, username")
-        .eq("family_id", user.familyId);
+        .eq("family_id", userFamilyId);
       
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.familyId && open,
+    enabled: !!(user?.familyId || user?.family_id) && open,
   });
 
   const handleCopyFamilyCode = async () => {
@@ -225,7 +229,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                       size="sm"
                       onClick={handleInviteFamilyMember}
                       className="mt-2 w-full"
-                    >
+                    />
                       <Share className="h-3 w-3 mr-2" />
                       Share Who's Night
                     </Button>
@@ -243,7 +247,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                   variant="outline"
                   onClick={() => setShowTeenSettings(true)}
                   className="w-full justify-start"
-                >
+                />
                   <Settings className="h-4 w-4 mr-2" />
                   Teen Permissions
                 </Button>
@@ -253,7 +257,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                 variant="outline"
                 onClick={logout}
                 className="w-full justify-start text-red-600 hover:text-red-700"
-              >
+              />
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
