@@ -21,7 +21,9 @@ export default function CalendarView() {
   const { data: assignments = [] } = useQuery({
     queryKey: ["calendar-assignments", monthString],
     queryFn: async () => {
-      if (!user?.familyId) return [];
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!userFamilyId) return [];
 
       const calendarDays = getCalendarDays(currentMonth);
       const startDate = calendarDays[0].date;
@@ -41,7 +43,7 @@ export default function CalendarView() {
 
       return assignments || [];
     },
-    enabled: !!user?.familyId,
+    enabled: !!(user?.familyId || user?.family_id),
   });
 
   // Ensure assignments is always an array
@@ -51,7 +53,9 @@ export default function CalendarView() {
   const { data: monthEvents = [] } = useQuery({
     queryKey: ["events", monthString],
     queryFn: async () => {
-      if (!user?.familyId) return [];
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!userFamilyId) return [];
 
       const calendarDays = getCalendarDays(currentMonth);
       const startDate = calendarDays[0].date;
@@ -71,13 +75,15 @@ export default function CalendarView() {
 
       return events || [];
     },
-    enabled: !!user?.familyId,
+    enabled: !!(user?.familyId || user?.family_id),
   });
 
   const { data: eventsForSelectedDate = [] } = useQuery({
     queryKey: ["events", selectedDate ? formatDate(selectedDate) : ""],
     queryFn: async () => {
-      if (!selectedDate || !user?.familyId) return [];
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!selectedDate || !userFamilyId) return [];
 
       const dateStr = formatDate(selectedDate);
       const { data: events, error } = await supabase
@@ -93,7 +99,7 @@ export default function CalendarView() {
 
       return events || [];
     },
-    enabled: !!selectedDate && !!user?.familyId,
+    enabled: !!selectedDate && !!(user?.familyId || user?.family_id),
   });
 
   const assignmentMutation = useMutation({
@@ -145,7 +151,7 @@ export default function CalendarView() {
             status: "pending",
             id: Date.now(), // temporary ID
             created_by: user?.id,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
           }];
         }
         return filteredAssignments;

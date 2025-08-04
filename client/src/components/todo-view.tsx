@@ -25,28 +25,40 @@ export default function TodoView() {
   const { user } = useAuth();
 
   const { data: tasks = [], error: tasksError } = useQuery({
-    queryKey: ["tasks"],
+    queryKey: ["tasks", user?.familyId || user?.family_id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("tasks").select("*");
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!userFamilyId) return [];
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
-      return data;
+      return data || [];
     },
+    enabled: !!(user?.familyId || user?.family_id),
   });
 
   const { data: pendingTasks = [], error: pendingError } = useQuery({
-    queryKey: ["pending_tasks", user?.family_id],
+    queryKey: ["pending_tasks", user?.familyId || user?.family_id],
     queryFn: async () => {
-      if (!user?.family_id) return [];
-      
+      // Check both familyId (camelCase) and family_id (snake_case) from database
+      const userFamilyId = user?.familyId || user?.family_id;
+      if (!userFamilyId) return [];
+
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
       return data || [];
     },
+    enabled: !!(user?.familyId || user?.family_id),
   });
 
   const createTaskMutation = useMutation({
@@ -61,7 +73,7 @@ export default function TodoView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.family_id] });
+      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.familyId || user?.family_id] });
       setShowAddTaskModal(false);
       setTaskForm({ name: "", description: "", dueDate: "", assignedTo: "mom" });
     },
@@ -75,7 +87,7 @@ export default function TodoView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.family_id] });
+      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.familyId || user?.family_id] });
     },
   });
 
@@ -99,7 +111,7 @@ export default function TodoView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.family_id] });
+      queryClient.invalidateQueries({ queryKey: ["pending_tasks", user?.familyId || user?.family_id] });
     },
   });
 
