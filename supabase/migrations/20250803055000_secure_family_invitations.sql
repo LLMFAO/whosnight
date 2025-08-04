@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_family_invitations_expires_at ON family_invitatio
 -- Create invitation_usage_log table for audit trail
 CREATE TABLE IF NOT EXISTS invitation_usage_log (
   id SERIAL PRIMARY KEY,
-  invitation_id INTEGER NOT NULL REFERENCES family_invitations(id),
+  invitation_id INTEGER REFERENCES family_invitations(id), -- Can be NULL for invalid codes
   used_by TEXT NOT NULL REFERENCES users(id),
   ip_address TEXT,
   user_agent TEXT,
@@ -74,7 +74,7 @@ CREATE POLICY "family_members_can_view_usage_log" ON invitation_usage_log
       JOIN family_invitations fi ON fi.id = invitation_usage_log.invitation_id
       WHERE u.id = auth.uid()::text 
       AND u.family_id = fi.family_id
-    )
+    ) OR invitation_usage_log.invitation_id IS NULL
   );
 
 CREATE POLICY "system_can_log_usage" ON invitation_usage_log
@@ -196,7 +196,7 @@ BEGIN
     END IF;
   END IF;
 
-  -- Log the usage attempt
+  -- Log the usage attempt (invitation_id can be NULL for invalid codes)
   INSERT INTO invitation_usage_log (
     invitation_id, used_by, ip_address, user_agent, success, error_message
   ) VALUES (
@@ -204,6 +204,11 @@ BEGIN
     CASE WHEN v_success THEN NULL ELSE v_message END
   );
 
-  RETURN QUERY SELECT v_invitation.family_id, v_success, v_message;
+  -- For invalid codes, we still want to return a family_id of NULL rather than causing an error
+  IF v_invitation.id IS NOT NULL THEN
+    RETURN QUERY SELECT v_invitation.family_id, v_success, v_message;
+  ELSE
+    RETURN QUERY SELECT NULL::INTEGER, v_success, v_message;
+  END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
