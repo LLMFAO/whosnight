@@ -5,7 +5,6 @@ import {
   insertCalendarAssignmentSchema,
   insertEventSchema,
   insertTaskSchema,
-  insertExpenseSchema,
   insertActionLogSchema,
   insertShareLinkSchema,
   insertTeenPermissionsSchema,
@@ -363,64 +362,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Expenses routes
-  app.get("/api/expenses", ensureAuthenticated, async (req, res) => {
-    try {
-      const { month } = req.query;
-      const expenses = await storage.getExpenses(month as string);
-      res.json(expenses);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch expenses" });
-    }
-  });
-
-  app.post("/api/expenses", ensureAuthenticated, async (req, res) => {
-    try {
-      const validatedData = insertExpenseSchema.parse({
-        ...req.body,
-        createdBy: req.user.id,
-      });
-      
-      const expense = await storage.createExpense(validatedData);
-      
-      // Log the action
-      await storage.createActionLog({
-        userId: req.user.id,
-        action: "create_expense",
-        details: `Created expense "${validatedData.name}" for $${validatedData.amount}`,
-        ipAddress: getClientIP(req),
-      });
-      
-      res.json(expense);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid expense data" });
-    }
-  });
-
-  app.put("/api/expenses/:id/status", ensureAuthenticated, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      
-      const updated = await storage.updateExpense(parseInt(id), { status });
-      if (!updated) {
-        return res.status(404).json({ message: "Expense not found" });
-      }
-      
-      // Log the action
-      await storage.createActionLog({
-        userId: req.user.id,
-        action: status === "confirmed" ? "accept_expense" : "decline_expense",
-        details: `${status === "confirmed" ? "Accepted" : "Declined"} expense "${updated.name}"`,
-        ipAddress: getClientIP(req),
-      });
-      
-      res.json(updated);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update expense status" });
-    }
-  });
-
   // Pending items routes
   app.get("/api/pending", ensureAuthenticated, async (req, res) => {
     try {
@@ -586,9 +527,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'task':
           await storage.updateTask(originalLog.entityId!, previousState);
           break;
-        case 'expense':
-          await storage.updateExpense(originalLog.entityId!, previousState);
-          break;
       }
 
       // Log the undo action
@@ -622,7 +560,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           canModifyAssignments: false,
           canAddEvents: false,
           canAddTasks: false,
-          canAddExpenses: false,
           isReadOnly: true,
           modifiedBy: req.user.id
         });

@@ -42,7 +42,7 @@ export default function NotificationBadge({
       <DetailedNotificationsModal
         open={showDetailedNotifications}
         onOpenChange={setShowDetailedNotifications}
-        pendingItems={pendingItems || { assignments: [], events: [], tasks: [], expenses: [] }}
+        pendingItems={pendingItems || { assignments: [], events: [], tasks: [] }}
       />
     </>
   );

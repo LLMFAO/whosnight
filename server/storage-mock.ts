@@ -7,8 +7,6 @@ import {
   type InsertEvent,
   type Task,
   type InsertTask,
-  type Expense,
-  type InsertExpense,
   type ActionLog,
   type InsertActionLog,
   type ShareLink,
@@ -46,13 +44,6 @@ export interface IStorage {
   updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<boolean>;
   
-  // Expenses
-  getExpenses(month?: string): Promise<Expense[]>;
-  getExpense(id: number): Promise<Expense | undefined>;
-  createExpense(expense: InsertExpense): Promise<Expense>;
-  updateExpense(id: number, updates: Partial<Expense>): Promise<Expense | undefined>;
-  deleteExpense(id: number): Promise<boolean>;
-  
   // Action Logs
   createActionLog(log: InsertActionLog): Promise<ActionLog>;
   getActionLogs(userId?: number): Promise<ActionLog[]>;
@@ -68,7 +59,6 @@ export interface IStorage {
     assignments: CalendarAssignment[];
     events: Event[];
     tasks: Task[];
-    expenses: Expense[];
   }>;
   
   acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void>;
@@ -87,7 +77,6 @@ export class MockStorage implements IStorage {
   private assignments: CalendarAssignment[] = [];
   private events: Event[] = [];
   private tasks: Task[] = [];
-  private expenses: Expense[] = [];
   private logs: ActionLog[] = [];
   private shareLinks: ShareLink[] = [];
   private permissions: TeenPermissions[] = [];
@@ -131,7 +120,6 @@ export class MockStorage implements IStorage {
         canModifyAssignments: false,
         canAddEvents: false,
         canAddTasks: false,
-        canAddExpenses: false,
         isReadOnly: true,
         modifiedBy: 1 // Mom's ID
       });
@@ -192,16 +180,6 @@ export class MockStorage implements IStorage {
   async updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined> { return undefined; }
   async deleteTask(id: number): Promise<boolean> { return false; }
   
-  async getExpenses(month?: string): Promise<Expense[]> { return []; }
-  async getExpense(id: number): Promise<Expense | undefined> { return undefined; }
-  async createExpense(expense: InsertExpense): Promise<Expense> {
-    const item: Expense = { id: this.nextId++, ...expense, createdAt: new Date(), updatedAt: new Date() };
-    this.expenses.push(item);
-    return item;
-  }
-  async updateExpense(id: number, updates: Partial<Expense>): Promise<Expense | undefined> { return undefined; }
-  async deleteExpense(id: number): Promise<boolean> { return false; }
-  
   async createActionLog(log: InsertActionLog): Promise<ActionLog> {
     const item: ActionLog = { id: this.nextId++, ...log, timestamp: new Date() };
     this.logs.push(item);
@@ -218,8 +196,8 @@ export class MockStorage implements IStorage {
   }
   async getShareLink(linkId: string): Promise<ShareLink | undefined> { return undefined; }
   
-  async getPendingItems(userId: number): Promise<{ assignments: CalendarAssignment[]; events: Event[]; tasks: Task[]; expenses: Expense[]; }> {
-    return { assignments: [], events: [], tasks: [], expenses: [] };
+  async getPendingItems(userId: number): Promise<{ assignments: CalendarAssignment[]; events: Event[]; tasks: Task[]; }> {
+    return { assignments: [], events: [], tasks: [] };
   }
   
   async acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void> {}

@@ -178,22 +178,34 @@ npx cap run ios
 
 **App Description:**
 ```
-Who's Night is the ultimate family coordination app designed for co-parents, families with teens, and busy households. Streamline your family's schedule management, task coordination, and expense tracking all in one intuitive mobile app.
+Who's Night is the ultimate family coordination app designed for co-parents, families with teens, and busy households. Streamline your family's schedule management and task coordination all in one intuitive mobile app.
 
-Key Features:
+PERFECT FOR:
+• Co-parents managing custody schedules
+• Families with teenagers learning responsibility
+• Busy households needing better organization
+• Extended families coordinating activities
+
+KEY FEATURES:
 • Calendar Management - Coordinate schedules between family members
 • Task Lists - Shared to-do lists with approval workflows
-• Expense Tracking - Monitor and manage family expenses
 • Role-Based Access - Customized experience for parents and teens
+• User Onboarding - Guided setup for new family members
 • Real-Time Updates - Stay synchronized across all devices
 • Secure Authentication - Protected family data with user accounts
 
-Perfect for divorced parents managing custody schedules, families with teenagers learning responsibility, or any household that needs better organization and communication.
+BUILT FOR FAMILIES:
+Who's Night understands that every family is different. Whether you're co-parenting after divorce, managing a household with teenagers, or coordinating with extended family members, our app adapts to your family's unique needs.
+
+PRIVACY & SECURITY:
+Your family's data is protected with secure authentication and encrypted sessions. We never share your personal information with third parties.
+
+Download Who's Night today and bring harmony to your family's coordination!
 ```
 
 **Keywords:**
 ```
-family, co-parenting, schedule, calendar, tasks, expenses, organization, productivity, parenting, teens
+family,co-parenting,schedule,calendar,tasks,organization,productivity,parenting,teens,coordination,household,custody,shared,planning
 ```
 
 **Screenshots Required:**
@@ -239,41 +251,81 @@ Host at: `https://whosnight.com/privacy-policy`
 
 ### 7. Production Checklist
 
-#### Pre-Submission
+#### App Configuration
+- [ ] **Bundle Identifier:** `com.whosnight.app` (or your chosen ID)
+- [ ] **App Name:** Who's Night
+- [ ] **Version:** 1.0.0
+- [ ] **Build Number:** Incremental (1, 2, 3...)
+- [ ] **Deployment Target:** iOS 13.0 or later
 
-- [ ] All test ad units replaced with production IDs
-- [ ] App tested on multiple iOS devices
-- [ ] All features working correctly
-- [ ] Privacy policy created and linked
-- [ ] App metadata completed
-- [ ] Screenshots captured and uploaded
-- [ ] App icons properly configured
-- [ ] Signing certificates valid
+#### AdMob Configuration
+- [ ] **Production Ad Units:** All test IDs replaced with production keys.
+- [ ] **AdMob App:** Approved and active in AdMob dashboard.
+- [ ] **Payment Setup:** Payment information configured in AdMob.
+- [ ] **Ad Policies:** Ensure compliance with AdMob policies.
 
-#### AdMob Production
+#### App Store Assets & Metadata
+- [ ] **App Icons:** All required sizes created and placed in `Assets.xcassets`.
+- [ ] **Screenshots:** All required device sizes captured and uploaded.
+- [ ] **App Preview:** Optional video preview created and uploaded.
+- [ ] **App Description:** Compelling and accurate description written.
+- [ ] **Keywords:** Relevant search terms added.
+- [ ] **Privacy Policy:** Created, hosted, and linked in App Store Connect.
 
-- [ ] AdMob app approved and active
-- [ ] Ad units created and configured
-- [ ] Payment information set up in AdMob
-- [ ] Ad performance monitoring enabled
+#### Final Checks
+- [ ] App tested on multiple physical iOS devices and simulators.
+- [ ] All features working correctly as per the manual test plan in `README.md`.
+- [ ] No crashes or major bugs.
+- [ ] Signing certificates are valid and correctly configured in Xcode.
+- [ ] App follows iOS Human Interface Guidelines.
+- [ ] Appropriate content rating selected in App Store Connect.
+- [ ] Export compliance information provided.
 
-#### App Store Review
+### 8. TestFlight Beta Testing
 
-- [ ] App follows iOS Human Interface Guidelines
-- [ ] No crashes or major bugs
-- [ ] All features accessible and functional
-- [ ] Appropriate content rating selected
-- [ ] Export compliance information provided
+#### Internal Testing
+1. **Add Team Members:**
+   - Up to 100 internal testers.
+   - Immediate access after upload, no review required.
+2. **Test Coverage:**
+   - All app features.
+   - Different iOS versions and device types.
+   - Ad functionality.
 
-### 8. Maintenance
+#### External Testing
+1. **Create Test Groups:**
+   - Up to 10,000 external testers.
+   - Requires a beta app review from Apple (24-48 hours).
+2. **Public Link:** Once approved, a public link can be shared for anyone to join the beta.
+
+### 9. App Store Review Process
+
+#### Submission
+1. **Complete App Information** in App Store Connect.
+2. **Add Build** from the successfully tested TestFlight version.
+3. **Submit for Review**.
+4. **Review Time:** Typically 24-48 hours, but can vary.
+
+#### Common Rejection Reasons
+1. **Crashes or Bugs:** Test thoroughly before submission.
+2. **Incomplete Information:** Fill out all required metadata fields.
+3. **Privacy Policy:** Must be publicly accessible and accurate.
+4. **Ad Implementation:** Must follow AdMob and Apple guidelines.
+5. **Metadata:** Screenshots must accurately represent the app's functionality.
+
+### 10. Maintenance & Post-Launch
+
+#### Post-Launch Monitoring
+- **Analytics:** Monitor downloads, revenue, and crashes in App Store Connect Analytics.
+- **Ad Performance:** Track ad revenue and eCPM rates in the AdMob Dashboard.
+- **User Feedback:** Keep an eye on App Store reviews and ratings.
+- **Crash Reports:** Monitor crash reports in Xcode Organizer or a third-party tool.
 
 #### Regular Updates
-
-- **Monitor ad performance** in AdMob dashboard
-- **Track app analytics** in App Store Connect
-- **Update dependencies** regularly
-- **Test on new iOS versions**
-- **Respond to user feedback**
+- **Version Updates:** Increment version and build numbers for each new release.
+- **Metadata Updates:** Optimize description and keywords based on performance.
+- **Dependency Updates:** Keep Capacitor and other dependencies up to date.
+- **Feature Updates:** Plan new features based on user feedback and analytics.
 
 #### Capacitor Updates
 

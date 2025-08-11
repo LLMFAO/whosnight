@@ -28,7 +28,7 @@ serve(async (req) => {
       });
     }
 
-    const [assignmentsRes, eventsRes, tasksRes, expensesRes] = await Promise.all([
+    const [assignmentsRes, eventsRes, tasksRes] = await Promise.all([
       supabase
         .from("calendar_assignments")
         .select("*")
@@ -44,18 +44,12 @@ serve(async (req) => {
         .select("*")
         .eq("created_by", user.id)
         .eq("status", "pending"),
-      supabase
-        .from("expenses")
-        .select("*")
-        .eq("created_by", user.id)
-        .eq("status", "pending"),
     ]);
 
     const error =
       assignmentsRes.error ||
       eventsRes.error ||
-      tasksRes.error ||
-      expensesRes.error;
+      tasksRes.error;
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
@@ -67,7 +61,6 @@ serve(async (req) => {
       assignments: assignmentsRes.data,
       events: eventsRes.data,
       tasks: tasksRes.data,
-      expenses: expensesRes.data,
     };
 
     return new Response(JSON.stringify(result), {

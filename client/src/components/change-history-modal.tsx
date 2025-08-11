@@ -138,7 +138,6 @@ export default function ChangeHistoryModal({
         case "calendar_assignment": tableName = "calendar_assignments"; break;
         case "event": tableName = "events"; break;
         case "task": tableName = "tasks"; break;
-        case "expense": tableName = "expenses"; break;
         default: throw new Error(`Unsupported entity type: ${logToUndo.entityType}`);
       }
 
@@ -176,7 +175,6 @@ export default function ChangeHistoryModal({
       queryClient.invalidateQueries({ queryKey: ['calendar-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
       setUndoingLogId(null);
     },
     onError: (error: any) => {
@@ -220,11 +218,11 @@ export default function ChangeHistoryModal({
 
   const getCurrentStatus = () => {
     if (currentAssignment) {
-      const { status, createdBy } = currentAssignment;
-      const creatorName = getUserName(createdBy);
+      const { status, created_by } = currentAssignment;
+      const creatorName = getUserName(created_by);
       
       if (status === "pending") {
-        const needsApproval = createdBy !== user?.id;
+        const needsApproval = created_by !== user?.id;
         if (needsApproval) {
           return {
             text: `Pending approval from ${creatorName === "Mom" ? "Dad" : "Mom"}`,

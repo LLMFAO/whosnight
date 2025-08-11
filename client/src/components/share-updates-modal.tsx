@@ -102,10 +102,6 @@ export default function ShareUpdatesModal({
       summary.push(`• ${pendingItems.tasks.length} task${pendingItems.tasks.length > 1 ? 's' : ''}`);
     }
     
-    if (pendingItems?.expenses?.length > 0) {
-      summary.push(`• ${pendingItems.expenses.length} expense${pendingItems.expenses.length > 1 ? 's' : ''}`);
-    }
-    
     return summary;
   };
 

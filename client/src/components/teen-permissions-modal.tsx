@@ -21,7 +21,6 @@ interface TeenPermissions {
   canModifyAssignments: boolean;
   canAddEvents: boolean;
   canAddTasks: boolean;
-  canAddExpenses: boolean;
   isReadOnly: boolean;
   modifiedBy: number;
   modifiedAt: string;
@@ -55,7 +54,6 @@ export default function TeenPermissionsModal({
             canModifyAssignments: false,
             canAddEvents: false,
             canAddTasks: false,
-            canAddExpenses: false,
             isReadOnly: true,
           };
         }
@@ -82,7 +80,6 @@ export default function TeenPermissionsModal({
         canModifyAssignments: permissions.canModifyAssignments || false,
         canAddEvents: permissions.canAddEvents || false,
         canAddTasks: permissions.canAddTasks || false,
-        canAddExpenses: permissions.canAddExpenses || false,
         isReadOnly: permissions.isReadOnly ?? true,
       });
     }
@@ -97,7 +94,6 @@ export default function TeenPermissionsModal({
         can_modify_assignments: updatedPermissions.canModifyAssignments || false,
         can_add_events: updatedPermissions.canAddEvents || false,
         can_add_tasks: updatedPermissions.canAddTasks || false,
-        can_add_expenses: updatedPermissions.canAddExpenses || false,
         is_read_only: updatedPermissions.isReadOnly ?? true,
         modified_by: user.id,
       };

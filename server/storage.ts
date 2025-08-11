@@ -2,8 +2,7 @@ import {
   users, 
   calendarAssignments, 
   events, 
-  tasks, 
-  expenses, 
+  tasks,
   actionLogs, 
   shareLinks,
   teenPermissions,
@@ -15,8 +14,6 @@ import {
   type InsertEvent,
   type Task,
   type InsertTask,
-  type Expense,
-  type InsertExpense,
   type ActionLog,
   type InsertActionLog,
   type ShareLink,
@@ -56,13 +53,6 @@ export interface IStorage {
   updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<boolean>;
   
-  // Expenses
-  getExpenses(month?: string): Promise<Expense[]>;
-  getExpense(id: number): Promise<Expense | undefined>;
-  createExpense(expense: InsertExpense): Promise<Expense>;
-  updateExpense(id: number, updates: Partial<Expense>): Promise<Expense | undefined>;
-  deleteExpense(id: number): Promise<boolean>;
-  
   // Action Logs
   createActionLog(log: InsertActionLog): Promise<ActionLog>;
   getActionLogs(userId?: number): Promise<ActionLog[]>;
@@ -78,7 +68,6 @@ export interface IStorage {
     assignments: CalendarAssignment[];
     events: Event[];
     tasks: Task[];
-    expenses: Expense[];
   }>;
   
   acceptAllPendingItems(userId: number, itemTypes: string[]): Promise<void>;
@@ -294,51 +283,6 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  // Expense methods
-  async getExpenses(month?: string): Promise<Expense[]> {
-    if (month) {
-      return await db
-        .select()
-        .from(expenses)
-        .where(like(expenses.date, `${month}%`));
-    }
-    return await db
-      .select()
-      .from(expenses);
-  }
-
-  async getExpense(id: number): Promise<Expense | undefined> {
-    const [expense] = await db
-      .select()
-      .from(expenses)
-      .where(eq(expenses.id, id));
-    return expense || undefined;
-  }
-
-  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
-    const [expense] = await db
-      .insert(expenses)
-      .values(insertExpense)
-      .returning();
-    return expense;
-  }
-
-  async updateExpense(id: number, updates: Partial<Expense>): Promise<Expense | undefined> {
-    const [expense] = await db
-      .update(expenses)
-      .set(updates)
-      .where(eq(expenses.id, id))
-      .returning();
-    return expense || undefined;
-  }
-
-  async deleteExpense(id: number): Promise<boolean> {
-    const result = await db
-      .delete(expenses)
-      .where(eq(expenses.id, id));
-    return (result.rowCount ?? 0) > 0;
-  }
-
   // Action Log methods
   async createActionLog(insertLog: InsertActionLog): Promise<ActionLog> {
     const [log] = await db
@@ -406,7 +350,6 @@ export class DatabaseStorage implements IStorage {
     assignments: CalendarAssignment[];
     events: Event[];
     tasks: Task[];
-    expenses: Expense[];
   }> {
     const momId = 1;
     const dadId = 2;
@@ -420,7 +363,6 @@ export class DatabaseStorage implements IStorage {
         assignments: [],
         events: [],
         tasks: [],
-        expenses: []
       };
     }
 
@@ -489,25 +431,10 @@ export class DatabaseStorage implements IStorage {
         )
       ));
 
-    const pendingExpenses = await db
-      .select()
-      .from(expenses)
-      .where(and(
-        eq(expenses.status, "pending"),
-        or(
-          eq(expenses.createdBy, teenId), // Both parents see teen requests
-          and(
-            ne(expenses.createdBy, userId), // Don't show own items
-            or(eq(expenses.createdBy, momId), eq(expenses.createdBy, dadId)) // Show other parent's items
-          )
-        )
-      ));
-
     return {
       assignments: pendingAssignments,
       events: allPendingEvents,
       tasks: pendingTasks,
-      expenses: pendingExpenses
     };
   }
 
@@ -531,12 +458,6 @@ export class DatabaseStorage implements IStorage {
             .update(tasks)
             .set({ status: "confirmed" })
             .where(eq(tasks.status, "pending"));
-          break;
-        case "expenses":
-          await db
-            .update(expenses)
-            .set({ status: "confirmed" })
-            .where(eq(expenses.status, "pending"));
           break;
       }
     }
@@ -577,12 +498,6 @@ export class DatabaseStorage implements IStorage {
           .update(tasks)
           .set({ status: "confirmed" })
           .where(eq(tasks.id, itemId));
-        break;
-      case "expense":
-        await db
-          .update(expenses)
-          .set({ status: "confirmed" })
-          .where(eq(expenses.id, itemId));
         break;
     }
 

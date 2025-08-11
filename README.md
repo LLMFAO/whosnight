@@ -55,20 +55,19 @@ A co-parenting coordination app built with React, TypeScript, and Supabase.
    - Mark tasks as complete/incomplete
    - Accept/decline pending tasks
 
-3. **Expense Tracking**
-   - View expense list with monthly summary
-   - Add new expenses with categories
-   - Accept/decline pending expenses
+3. **User Management and Invitations**
+   - Register a new user account.
+   - Create a new family, which should generate a secure invitation code.
+   - As a new user, join a family using the invitation code.
+   - Verify that invitation codes expire and have usage limits (as per the `SECURE_INVITATION_SYSTEM.md`).
+   - Ensure a user cannot join a family if they are already in one.
+   - View user request history and undo recent actions.
+   - Logout functionality.
 
-4. **User Management**
-   - Automatic role assignment based on database profile
-   - View user request history
-   - Undo recent actions
-   - Logout functionality
-
-5. **Notifications & Sharing**
-   - View detailed notifications modal
-   - Accept all pending items
+4. **Notifications & Sharing**
+   - View detailed notifications modal for pending changes.
+   - Accept/decline individual pending items.
+   - Use the "Accept All" functionality.
    - Share updates via link generation
    - Log external notifications
    - Family code display and sharing
@@ -77,15 +76,22 @@ A co-parenting coordination app built with React, TypeScript, and Supabase.
 
 - Test network failures (offline mode)
 - Test invalid data submissions
-- Test permission errors for teen users
-- Verify error messages display correctly
-- Test duplicate email registration handling
+- Test permission errors for teen users (e.g., a teen trying to perform an action they don't have permission for).
+- Verify user-friendly error messages are displayed for all common failures.
+- Test duplicate email registration handling.
+
+### Security and Data Isolation Tests
+
+- **(CRITICAL)** Log in as a user from "Family A" and verify you cannot see any calendar, task, or user data from "Family B" through the UI or by inspecting network requests.
+- **(CRITICAL)** Attempt to access data from another family directly using API calls (if possible) to ensure RLS policies are enforced.
+- Verify that only parents can create new family invitations.
+- Verify that only parents can manage teen permissions.
 
 ### Data Consistency Tests
 
-- Verify real-time updates across user roles
-- Test concurrent modifications
-- Ensure pending items sync properly
+- Verify real-time updates across different user roles within the same family (e.g., Mom makes a change, Dad sees it instantly).
+- Test concurrent modifications to the same item to ensure data integrity.
+- Ensure pending item badges and modals sync correctly after actions are taken.
 
 ## Environment Setup
 

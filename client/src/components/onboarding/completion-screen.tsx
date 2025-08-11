@@ -64,17 +64,6 @@ export function CompletionScreen({ onComplete, onBack }: CompletionScreenProps) 
             </div>
           </div>
           
-          <div className="flex items-start space-x-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-blue-600 text-sm font-semibold">4</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Track Expenses</h4>
-              <p className="text-sm text-gray-600">
-                Start logging family expenses to keep everyone informed about spending.
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
