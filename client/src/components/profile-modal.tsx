@@ -229,7 +229,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                       size="sm"
                       onClick={handleInviteFamilyMember}
                       className="mt-2 w-full"
-                    />
+                    >
                       <Share className="h-3 w-3 mr-2" />
                       Share Who's Night
                     </Button>
@@ -247,7 +247,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                   variant="outline"
                   onClick={() => setShowTeenSettings(true)}
                   className="w-full justify-start"
-                />
+                >
                   <Settings className="h-4 w-4 mr-2" />
                   Teen Permissions
                 </Button>
@@ -257,7 +257,7 @@ Who's Night helps families coordinate schedules, tasks, and responsibilities tog
                 variant="outline"
                 onClick={logout}
                 className="w-full justify-start text-red-600 hover:text-red-700"
-              />
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>

@@ -3,13 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   username?: string;
   name?: string;
   role?: string;
   familyId?: number | null;
+  familySetupMode?: "create" | "join" | null;
+  newInvitationCode?: string | null;
+  newInvitationExpiresAt?: string | null;
+  familyName?: string | null;
 }
 
 interface AuthContextType {
@@ -138,7 +142,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Set the just logged in user so we can use it in the query
     setJustLoggedInUser(userData);
     setUser(userData);
-    queryClient.invalidateQueries({ queryKey: ["auth"] });
+    // Invalidate the specific query to ensure a refetch if needed, though setJustLoggedInUser should handle it.
+    queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
   };
 
   const logout = () => {

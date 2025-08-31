@@ -53,8 +53,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       if (authError) {
         console.error('❌ Auth signup failed:', authError);
         // Handle specific Supabase Auth errors
-        if (authError.message.includes('User already registered')) {
-          throw new Error('An account with this email already exists. Please sign in instead.');
+        if (authError.message.includes('User already registered') || authError.status === 400) {
+          throw new Error('USER_ALREADY_EXISTS');
         }
         throw new Error(authError.message);
       }
@@ -129,14 +129,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           console.error('❌ Profile creation failed:', profileError);
           // Handle duplicate key errors with user-friendly messages
           if (profileError.code === '23505') { // PostgreSQL unique constraint violation
-            if (profileError.message.includes('users_new_pkey') || profileError.message.includes('users_pkey')) {
-              throw new Error('An account with this email already exists. Please sign in instead.');
+            if (profileError.message.includes('users_new_pkey') || profileError.message.includes('users_pkey') || profileError.message.includes('email')) {
+              throw new Error('USER_ALREADY_EXISTS');
             }
             if (profileError.message.includes('username')) {
               throw new Error('This username is already taken. Please choose a different username.');
-            }
-            if (profileError.message.includes('email')) {
-              throw new Error('An account with this email already exists. Please sign in instead.');
             }
           }
           throw new Error(`Profile creation failed: ${profileError.message}`);
@@ -195,7 +192,20 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           {registerMutation.error && (
             <Alert variant="destructive">
               <AlertDescription>
-                {registerMutation.error.message}
+                {registerMutation.error.message === 'USER_ALREADY_EXISTS' ? (
+                  <div className="space-y-2">
+                    <p>An account with this email already exists.</p>
+                    <Button
+                      variant="link"
+                      onClick={onSwitchToLogin}
+                      className="p-0 h-auto text-sm font-normal underline"
+                    >
+                      Please sign in instead.
+                    </Button>
+                  </div>
+                ) : (
+                  registerMutation.error.message
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -336,7 +346,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <Button
             type="submit"
             className="w-full"
-            disabled={registerMutation.isPending || password !== confirmPassword || !role || (joinExistingFamily && !invitationCode.trim())}
+            disabled={
+              registerMutation.isPending ||
+              password !== confirmPassword ||
+              !role ||
+              !familySetupMode ||
+              (familySetupMode === 'join' && !invitationCode.trim())
+            }
           >
             {registerMutation.isPending ? "Creating account..." : "Create Account"}
           </Button>

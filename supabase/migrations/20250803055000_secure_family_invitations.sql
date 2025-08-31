@@ -167,16 +167,22 @@ BEGIN
       RETURN QUERY SELECT NULL::INTEGER, FALSE, v_message;
     ELSE
       -- Join the family
-      INSERT INTO users (id, email, username, name, role, family_id)
-      VALUES (
-        v_user_id,
-        (SELECT email FROM auth.users WHERE id = auth.uid()),
-        COALESCE((SELECT raw_user_meta_data->>'username' FROM auth.users WHERE id = auth.uid()), 'user'),
-        COALESCE((SELECT raw_user_meta_data->>'name' FROM auth.users WHERE id = auth.uid()), 'User'),
-        COALESCE((SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()), 'teen'),
-        v_invitation.family_id
-      )
-      ON CONFLICT (id) DO UPDATE SET family_id = v_invitation.family_id;
+      -- First check if user exists
+      IF EXISTS (SELECT 1 FROM users WHERE id = v_user_id) THEN
+        -- Update existing user
+        UPDATE users SET family_id = v_invitation.family_id WHERE id = v_user_id;
+      ELSE
+        -- Insert new user
+        INSERT INTO users (id, email, username, name, role, family_id)
+        VALUES (
+          v_user_id,
+          (SELECT email FROM auth.users WHERE id = auth.uid()),
+          COALESCE((SELECT raw_user_meta_data->>'username' FROM auth.users WHERE id = auth.uid()), 'user'),
+          COALESCE((SELECT raw_user_meta_data->>'name' FROM auth.users WHERE id = auth.uid()), 'User'),
+          COALESCE((SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()), 'teen'),
+          v_invitation.family_id
+        );
+      END IF;
 
       v_success := TRUE;
       v_message := 'Successfully joined family';

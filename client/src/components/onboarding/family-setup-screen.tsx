@@ -112,6 +112,8 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
       setErrorMessage("");
       // Refresh the auth context to get updated user data
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      // Force a refetch immediately
+      queryClient.refetchQueries({ queryKey: ["auth", "me"] });
     },
     onError: (error) => {
       console.error('❌ Create family mutation failed:', error);
@@ -184,6 +186,8 @@ export function FamilySetupScreen({ onNext, onBack }: FamilySetupScreenProps) {
       setErrorMessage("");
       // Refresh the auth context to get updated user data
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      // Force a refetch immediately
+      queryClient.refetchQueries({ queryKey: ["auth", "me"] });
     },
     onError: (error) => {
       console.error('❌ Join family mutation failed:', error);
